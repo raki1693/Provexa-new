@@ -16,7 +16,7 @@ const bulkUploadSchema = new mongoose.Schema(
     ],
     certIds: [String],
   },
-  { timestamps: true }
+  { timestamps: true, suppressReservedKeysWarning: true }
 );
 
 module.exports = mongoose.model('BulkUpload', bulkUploadSchema);
