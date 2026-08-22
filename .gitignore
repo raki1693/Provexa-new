@@ -28,5 +28,3 @@ yarn-error.log*
 dist/
 client/dist/
 build/
-server/public/uploads/logo.jpg
-client/public/logo.jpg
