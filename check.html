@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Check | PROVEXA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar scrolled">
+    <a href="index.html" class="logo">
+      <i class="fa-solid fa-shield-halved"></i> PROVEXA
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="verify.html">Verify</a></li>
+      <li><a href="check.html" class="active">Check</a></li>
+      <li><a href="university.html">University</a></li>
+      <li><a href="student.html">Student</a></li>
+    </ul>
+    <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+  </nav>
+
+  <section class="section" style="padding-top: 8rem; min-height: 80vh;">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <div style="text-align:center; margin-bottom: 2rem;">
+        <i class="fa-solid fa-brain" style="font-size:3rem; color:var(--teal);"></i>
+        <h1 style="margin-top:1rem;">AI-Powered Document Intelligence</h1>
+        <p>Analyze research papers, assignments, and legacy certificates using advanced AI forensics.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="tabs" style="overflow-x:auto; white-space:nowrap;">
+          <div class="tab active" data-target="tab-text">AI Content & Plagiarism</div>
+          <div class="tab" data-target="tab-fake">Fake Certificate Check</div>
+        </div>
+
+        <div id="tab-text" class="tab-content active">
+          <div class="form-group">
+            <textarea class="form-control" rows="8" placeholder="Paste your essay, thesis, or article text here to check for AI generation and plagiarism..."></textarea>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <p style="font-size:0.85rem; color:var(--text-light);"><i class="fa-solid fa-bolt"></i> 3 Free checks remaining this month.</p>
+            <button id="aiAnalyzeBtn" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Analyze Text</button>
+          </div>
+          
+          <div id="aiResultArea" style="margin-top:2rem;"></div>
+        </div>
+
+        <div id="tab-fake" class="tab-content">
+          <div class="upload-area">
+            <i class="fa-solid fa-file-image"></i>
+            <p>Upload a scanned certificate (PDF/JPG)</p>
+            <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">Our AI will analyze font anomalies, stamp integrity, and metadata.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-bottom">
+      <p>Built for India 🇮🇳 | © 2026 PROVEXA. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>University Dashboard | PROVEXA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar scrolled">
+    <a href="index.html" class="logo">
+      <i class="fa-solid fa-shield-halved"></i> PROVEXA
+    </a>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <span class="badge badge-success"><i class="fa-solid fa-check"></i> Verified Inst.</span>
+      <span style="font-weight:600; color:var(--navy);">IIT Delhi Admin</span>
+      <img src="https://ui-avatars.com/api/?name=IIT+Delhi&background=1A237E&color=fff" style="width:40px; border-radius:50%;" alt="avatar">
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="#" class="sidebar-link active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+      <a href="#" class="sidebar-link"><i class="fa-solid fa-certificate"></i> Issue Certs</a>
+      <a href="#" class="sidebar-link"><i class="fa-solid fa-users"></i> Manage Records</a>
+      <a href="#" class="sidebar-link"><i class="fa-solid fa-ban"></i> Revocations</a>
+      <a href="#" class="sidebar-link"><i class="fa-solid fa-gear"></i> Settings</a>
+    </aside>
+
+    <main class="main-content">
+      <h2 style="margin-bottom:2rem;">Dashboard Overview</h2>
+      
+      <div class="grid-3" style="margin-bottom:2rem;">
+        <div class="glass-card" style="padding:1.5rem;">
+          <p style="color:var(--text-light); margin-bottom:0.5rem;">Total Issued</p>
+          <h3>1,247</h3>
+        </div>
+        <div class="glass-card" style="padding:1.5rem;">
+          <p style="color:var(--text-light); margin-bottom:0.5rem;">Verifications Today</p>
+          <h3>89</h3>
+        </div>
+        <div class="glass-card" style="padding:1.5rem;">
+          <p style="color:var(--text-light); margin-bottom:0.5rem;">Trust Score</p>
+          <h3 style="color:var(--success);">98.7%</h3>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card">
+          <h3 style="margin-bottom:1.5rem;">Quick Issue Certificate</h3>
+          <form id="issueForm">
+            <div class="form-group">
+              <label>Student Name</label>
+              <input type="text" class="form-control" required placeholder="e.g. Priya Singh">
+            </div>
+            <div class="form-group">
+              <label>Roll Number</label>
+              <input type="text" class="form-control" required placeholder="e.g. 2021CSB1042">
+            </div>
+            <div class="form-group">
+              <label>Program</label>
+              <input type="text" class="form-control" required placeholder="e.g. B.Tech Computer Science">
+            </div>
+            <div class="form-group">
+              <label>Grade / CGPA</label>
+              <input type="text" class="form-control" required placeholder="e.g. 9.2">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-link"></i> Issue & Anchor</button>
+          </form>
+        </div>
+
+        <div class="glass-card">
+          <h3 style="margin-bottom:1.5rem;">Recent Issuances</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ravi Kumar</td>
+                  <td>PRX-092</td>
+                  <td><span class="badge badge-success">Anchored</span></td>
+                </tr>
+                <tr>
+                  <td>Anjali Das</td>
+                  <td>PRX-091</td>
+                  <td><span class="badge badge-success">Anchored</span></td>
+                </tr>
+                <tr>
+                  <td>Vikram S</td>
+                  <td>PRX-090</td>
+                  <td><span class="badge badge-success">Anchored</span></td>
+                </tr>
+                <tr>
+                  <td>Neha Gupta</td>
+                  <td>PRX-089</td>
+                  <td><span class="badge badge-success">Anchored</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top:2rem;">
+            <h4>Bulk Upload</h4>
+            <div class="upload-area" style="padding:1.5rem; margin-top:1rem;">
+              <i class="fa-solid fa-file-csv" style="font-size:2rem; margin-bottom:0.5rem;"></i>
+              <p>Drag & drop CSV</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

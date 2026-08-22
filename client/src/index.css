@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F4F6F7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.provexa-gradient {
+  background: linear-gradient(135deg, #1B4F72 0%, #2E86C1 100%);
+}
+
+.student-gradient { background: linear-gradient(135deg, #1A5276, #2E86C1); }
+.institution-gradient { background: linear-gradient(135deg, #145A32, #1E8449); }
+.employer-gradient { background: linear-gradient(135deg, #512E5F, #7D3C98); }
+.admin-gradient { background: linear-gradient(135deg, #641E16, #922B21); }
+
+.card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.card-shadow-hover { box-shadow: 0 8px 30px rgba(0,0,0,0.14); }
+
+.sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200;
+}
+.sidebar-link:hover { @apply bg-white bg-opacity-10; }
+.sidebar-link.active { @apply bg-white bg-opacity-20 font-semibold; }
+
+.btn-primary {
+  @apply px-6 py-2.5 rounded-lg font-semibold text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:border-transparent text-sm;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }

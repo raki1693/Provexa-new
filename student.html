@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Wallet | PROVEXA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar scrolled">
+    <a href="index.html" class="logo">
+      <i class="fa-solid fa-shield-halved"></i> PROVEXA
+    </a>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <span style="font-weight:600; color:var(--navy);">Rahul Sharma</span>
+      <img src="https://ui-avatars.com/api/?name=Rahul+Sharma&background=00BFA5&color=fff" style="width:40px; border-radius:50%;" alt="avatar">
+    </div>
+  </nav>
+
+  <section class="section" style="padding-top: 8rem;">
+    <div class="grid-3">
+      <!-- Profile Card -->
+      <div class="glass-card" style="text-align:center; height: fit-content;">
+        <img src="https://ui-avatars.com/api/?name=Rahul+Sharma&background=00BFA5&color=fff&size=120" style="border-radius:50%; margin-bottom:1rem;" alt="avatar">
+        <h3>Rahul Sharma</h3>
+        <p>B.Tech Computer Science</p>
+        <p style="font-size:0.9rem; color:var(--navy); font-weight:600; margin-top:0.5rem;">IIT Delhi | Class of 2024</p>
+        <hr style="margin:1.5rem 0; border:none; border-top:1px solid #eee;">
+        <div style="text-align:left; font-size:0.9rem;">
+          <p style="margin-bottom:0.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--teal)"></i> <strong>Recent Activity:</strong></p>
+          <p>Verified by TCS HR (2 hrs ago)</p>
+          <p>Verified by Infosys (1 day ago)</p>
+        </div>
+      </div>
+
+      <!-- Credentials List -->
+      <div style="grid-column: span 2;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <h2>My Credentials</h2>
+          <button class="btn btn-outline btn-sm"><i class="fa-solid fa-plus"></i> Request Legacy Digitization</button>
+        </div>
+
+        <div class="glass-card" style="margin-bottom:1.5rem; display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;">
+          <i class="fa-solid fa-graduation-cap" style="font-size:3rem; color:var(--navy);"></i>
+          <div style="flex:1;">
+            <h3 style="margin-bottom:0.25rem;">B.Tech Computer Science Degree</h3>
+            <p style="font-size:0.9rem; color:var(--text-light);">Issued: June 2024 • IIT Delhi</p>
+            <p style="font-size:0.85rem; font-family:monospace; background:#eee; display:inline-block; padding:2px 8px; border-radius:4px; margin-top:5px;">ID: PRX-2025-001</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <button class="btn btn-primary share-btn"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <button class="btn btn-outline" style="padding:0.5rem;"><i class="fa-solid fa-download"></i> PDF</button>
+          </div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom:1.5rem; display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;">
+          <i class="fa-solid fa-award" style="font-size:3rem; color:var(--teal);"></i>
+          <div style="flex:1;">
+            <h3 style="margin-bottom:0.25rem;">Dean's Merit List Certificate</h3>
+            <p style="font-size:0.9rem; color:var(--text-light);">Issued: Jan 2023 • IIT Delhi</p>
+            <p style="font-size:0.85rem; font-family:monospace; background:#eee; display:inline-block; padding:2px 8px; border-radius:4px; margin-top:5px;">ID: PRX-2023-442</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <button class="btn btn-primary share-btn"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <button class="btn btn-outline" style="padding:0.5rem;"><i class="fa-solid fa-download"></i> PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal-content text-center">
+      <i class="fa-solid fa-times modal-close"></i>
+      <h3 style="margin-bottom:1rem;">Share Credential</h3>
+      <div style="padding:2rem; background:#f9f9f9; border-radius:8px; margin-bottom:1rem;">
+        <i class="fa-solid fa-qrcode" style="font-size:6rem; color:var(--navy);"></i>
+      </div>
+      <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+        <input type="text" class="form-control" value="https://provexa.io/verify/PRX-2025-001" readonly>
+        <button class="btn btn-secondary" onclick="alert('Copied!')"><i class="fa-solid fa-copy"></i></button>
+      </div>
+      <div style="display:flex; justify-content:center; gap:1rem;">
+        <a href="#" style="color:#0077b5; font-size:2rem;"><i class="fa-brands fa-linkedin"></i></a>
+        <a href="#" style="color:#25D366; font-size:2rem;"><i class="fa-brands fa-whatsapp"></i></a>
+        <a href="#" style="color:var(--text-dark); font-size:2rem;"><i class="fa-solid fa-envelope"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

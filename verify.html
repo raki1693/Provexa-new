@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify | PROVEXA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar scrolled">
+    <a href="index.html" class="logo">
+      <i class="fa-solid fa-shield-halved"></i> PROVEXA
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="verify.html" class="active">Verify</a></li>
+      <li><a href="check.html">Check</a></li>
+      <li><a href="university.html">University</a></li>
+      <li><a href="student.html">Student</a></li>
+    </ul>
+    <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+  </nav>
+
+  <section class="section" style="padding-top: 8rem; min-height: 80vh;">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <div style="text-align:center; margin-bottom: 2rem;">
+        <i class="fa-solid fa-shield-check" style="font-size:3rem; color:var(--teal);"></i>
+        <h1 style="margin-top:1rem;">Verify Any Certificate in 3 Seconds</h1>
+        <p>Try it! Enter <strong>PRX-2025-001</strong> for Genuine, <strong>PRX-FAKE-001</strong> for Forged.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="tabs">
+          <div class="tab active" data-target="tab-id">PROVEXA ID</div>
+          <div class="tab" data-target="tab-qr">Scan QR</div>
+          <div class="tab" data-target="tab-upload">Upload PDF</div>
+        </div>
+
+        <div id="tab-id" class="tab-content active">
+          <div class="form-group" style="display:flex; gap:1rem;">
+            <input type="text" id="veridocInput" class="form-control" placeholder="Enter PROVEXA ID (e.g. PRX-...)" style="font-size:1.2rem; padding:1rem;">
+            <button id="verifyBtn" class="btn btn-primary" style="font-size:1.2rem; padding:1rem 2rem;">Verify</button>
+          </div>
+          <div id="resultArea" style="margin-top: 2rem; min-height: 150px;"></div>
+        </div>
+
+        <div id="tab-qr" class="tab-content">
+          <div class="upload-area">
+            <i class="fa-solid fa-camera"></i>
+            <p>Click to open camera or upload QR image</p>
+          </div>
+        </div>
+
+        <div id="tab-upload" class="tab-content">
+          <div class="upload-area">
+            <i class="fa-solid fa-file-pdf"></i>
+            <p>Drag & Drop Certificate PDF here to verify signatures</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-bottom">
+      <p>Built for India 🇮🇳 | © 2026 PROVEXA. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
