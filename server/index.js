@@ -109,6 +109,17 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
+// Self-ping to prevent Render free-tier sleep (runs every 12 minutes)
+const https = require('https');
+const BACKEND_URL = process.env.BACKEND_URL || 'https://provexa-api.onrender.com';
+setInterval(() => {
+  https.get(`${BACKEND_URL}/api/health`, (res) => {
+    console.log(`Self-ping sent. Status: ${res.statusCode}`);
+  }).on('error', (err) => {
+    console.error('Self-ping error:', err.message);
+  });
+}, 12 * 60 * 1000); // 12 minutes
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 PROVEXA Server running on port ${PORT}`);
