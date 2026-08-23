@@ -24,7 +24,15 @@ router.get('/verify/:certId', async (req, res) => {
   // Increment verification count
   await Certificate.findByIdAndUpdate(cert._id, { $inc: { verificationCount: 1 } });
 
-  res.json({ success: true, result, data: cert });
+  const certObj = cert.toObject();
+  if (certObj.institution && !certObj.institution.certificateDesign) {
+    certObj.institution.certificateDesign = {
+      templateType: 'default',
+      signatureUrl: ''
+    };
+  }
+
+  res.json({ success: true, result, data: certObj });
 });
 
 module.exports = router;
