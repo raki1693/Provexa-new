@@ -13,6 +13,8 @@ export default function ForgotPassword() {
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [errorState, setErrorState] = useState(false);
+  const [shakeState, setShakeState] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -30,14 +32,21 @@ export default function ForgotPassword() {
 
   const autoVerifyResetOtp = async (otpValue) => {
     setLoading(true);
+    setErrorState(false);
     try {
       await api.post(`/${role}/verify-reset-otp`, { email, otp: otpValue });
       setIsOtpVerified(true);
       toast.success('Reset code verified! Please set your new password.');
     } catch (err) {
+      setErrorState(true);
+      setShakeState(true);
       toast.error(err.response?.data?.message || 'Incorrect reset code');
-      setOtp(['', '', '', '', '', '']);
-      document.getElementById('otp-0')?.focus();
+      // Trigger shake and reset inputs
+      setTimeout(() => {
+        setShakeState(false);
+        setOtp(['', '', '', '', '', '']);
+        document.getElementById('otp-0')?.focus();
+      }, 500);
     } finally {
       setLoading(false);
     }
@@ -189,7 +198,7 @@ export default function ForgotPassword() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-white/80 mb-2 text-center">6-Digit Reset Code</label>
-                    <div className="flex justify-center gap-2 mb-4">
+                    <div className={`flex justify-center gap-2 mb-4 ${shakeState ? 'animate-shake' : ''}`}>
                       {otp.map((digit, idx) => (
                         <input
                           key={idx}
@@ -199,7 +208,13 @@ export default function ForgotPassword() {
                           value={digit}
                           onChange={e => handleOtpChange(e.target, idx)}
                           onKeyDown={e => handleOtpKeyDown(e, idx)}
-                          className="w-10 h-10 border-2 rounded-xl text-center text-lg font-bold bg-slate-950/40 border-white/20 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                          className={`w-10 h-10 border-2 rounded-xl text-center text-lg font-bold bg-slate-950/40 focus:outline-none transition-all duration-200 ${
+                            isOtpVerified
+                              ? 'border-green-500 text-green-400 bg-green-500/10 focus:border-green-500 focus:ring-green-500'
+                              : errorState
+                              ? 'border-red-500 text-red-400 bg-red-500/10 focus:border-red-500 focus:ring-red-500'
+                              : 'border-white/20 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                          }`}
                         />
                       ))}
                     </div>

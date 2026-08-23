@@ -13,6 +13,8 @@ export default function StudentOTP() {
   const [email] = useState(location.state?.email || '');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [errorState, setErrorState] = useState(false);
+  const [shakeState, setShakeState] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -30,16 +32,21 @@ export default function StudentOTP() {
 
   const autoVerifyOtp = async (otpValue) => {
     setLoading(true);
+    setErrorState(false);
     try {
       await api.post('/student/verify-otp-only', { email, otp: otpValue });
       setIsOtpVerified(true);
       toast.success('OTP verified! Please set your password.');
     } catch (err) {
+      setErrorState(true);
+      setShakeState(true);
       toast.error(err.response?.data?.message || 'Incorrect OTP code');
-      // Reset inputs on error
-      setOtp(['', '', '', '', '', '']);
-      // Focus first input
-      document.getElementById('otp-0')?.focus();
+      // Trigger shake and reset inputs
+      setTimeout(() => {
+        setShakeState(false);
+        setOtp(['', '', '', '', '', '']);
+        document.getElementById('otp-0')?.focus();
+      }, 500);
     } finally {
       setLoading(false);
     }
@@ -135,7 +142,7 @@ export default function StudentOTP() {
           {!isOtpVerified ? (
             <div>
               {/* 6 Digit OTP Input Boxes */}
-              <div className="flex justify-center gap-1.5 sm:gap-2 mb-6">
+              <div className={`flex justify-center gap-1.5 sm:gap-2 mb-6 ${shakeState ? 'animate-shake' : ''}`}>
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
@@ -145,7 +152,13 @@ export default function StudentOTP() {
                     value={digit}
                     onChange={e => handleChange(e.target, idx)}
                     onKeyDown={e => handleKeyDown(e, idx)}
-                    className="w-9 h-9 sm:w-12 sm:h-12 border-2 rounded-lg sm:rounded-xl text-center text-lg sm:text-xl font-bold bg-white text-gray-800 border-gray-200 focus:outline-none focus:border-provexa-blue focus:ring-1 focus:ring-provexa-blue"
+                    className={`w-9 h-9 sm:w-12 sm:h-12 border-2 rounded-lg sm:rounded-xl text-center text-lg sm:text-xl font-bold bg-white focus:outline-none transition-all duration-200 ${
+                      isOtpVerified
+                        ? 'border-green-500 text-green-700 bg-green-50/30 focus:border-green-500 focus:ring-green-500'
+                        : errorState
+                        ? 'border-red-500 text-red-700 bg-red-50/30 focus:border-red-500 focus:ring-red-500'
+                        : 'border-gray-200 text-gray-800 focus:border-provexa-blue focus:ring-1 focus:ring-provexa-blue'
+                    }`}
                   />
                 ))}
               </div>
