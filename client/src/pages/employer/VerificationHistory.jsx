@@ -70,11 +70,12 @@ export default function VerificationHistory() {
               onChange={e => setFilter(e.target.value)}
               className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-provexa-purple"
             >
-            <option value="">All Results</option>
-            <option value="verified">Verified</option>
-            <option value="revoked">Revoked</option>
-            <option value="invalid">Invalid</option>
-          </select>
+              <option value="">All Results</option>
+              <option value="verified">Verified</option>
+              <option value="revoked">Revoked</option>
+              <option value="invalid">Invalid</option>
+            </select>
+          </div>
         </div>
       </div>
 
