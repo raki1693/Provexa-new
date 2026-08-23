@@ -1,10 +1,9 @@
 const nodemailer = require('nodemailer');
 
-const port = parseInt(process.env.EMAIL_PORT) || 587;
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: port,
-  secure: port === 465, // true for 465, false for 587
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false, // false for 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -12,8 +11,6 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false, // Crucial: bypasses strict SSL issues on datacenter containers
   },
-  connectionTimeout: 10000, // 10 seconds connection timeout
-  greetingTimeout: 10000, // 10 seconds greeting timeout
 });
 
 const FROM = process.env.EMAIL_FROM || 'PROVEXA <noreply@provexa.in>';
@@ -61,78 +58,8 @@ function wrapEmail(title, body) {
 }
 
 async function sendEmail(to, subject, html) {
-  // 1. If BREVO_API_KEY is configured, use Brevo HTTP API (runs over HTTPS Port 443, bypassing Render SMTP blocks)
-  if (process.env.BREVO_API_KEY) {
-    try {
-      let senderName = 'PROVEXA';
-      let senderEmail = 'kits.guntur.ac@gmail.com';
-      if (FROM.includes('<')) {
-        const parts = FROM.split('<');
-        senderName = parts[0].trim();
-        senderEmail = parts[1].replace('>', '').trim();
-      } else {
-        senderEmail = FROM.trim();
-      }
-
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'api-key': process.env.BREVO_API_KEY,
-        },
-        body: JSON.stringify({
-          sender: { name: senderName, email: senderEmail },
-          to: [{ email: to }],
-          subject: subject,
-          htmlContent: html,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        console.error('Brevo API Error:', data);
-      } else {
-        console.log('✅ Email sent via Brevo API successfully. MessageID:', data.messageId);
-      }
-    } catch (err) {
-      console.error('Failed to send email via Brevo API:', err.message);
-    }
-    return;
-  }
-
-  // 2. If RESEND_API_KEY is configured, use Resend HTTP API (runs over HTTPS Port 443)
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: FROM,
-          to: [to],
-          subject: subject,
-          html: html,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        console.error('Resend API Error:', data);
-      } else {
-        console.log('✅ Email sent via Resend API successfully. ID:', data.id);
-      }
-    } catch (err) {
-      console.error('Failed to send email via Resend API:', err.message);
-    }
-    return;
-  }
-
-  // 3. Fallback to standard Nodemailer SMTP (for local development where ports aren't blocked)
   try {
     await transporter.sendMail({ from: FROM, to, subject, html });
-    console.log('✅ Email sent via Nodemailer SMTP successfully.');
   } catch (err) {
     console.error('Email send error:', err.message);
     // Don't throw — email failure shouldn't break the API
