@@ -13,6 +13,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+console.log('📬 [SMTP Diagnostics] Configured variables on startup:');
+console.log(`- Host: ${process.env.EMAIL_HOST || 'smtp-relay.brevo.com'}`);
+console.log(`- Port: ${process.env.EMAIL_PORT || '587'}`);
+console.log(`- User: ${process.env.EMAIL_USER || 'Not Defined'}`);
+console.log(`- Pass Length: ${process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0}`);
+console.log(`- From Address: ${process.env.EMAIL_FROM || 'Not Defined'}`);
+
 const FROM = process.env.EMAIL_FROM || 'PROVEXA <noreply@provexa.in>';
 
 const baseStyle = `
