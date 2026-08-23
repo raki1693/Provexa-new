@@ -156,6 +156,15 @@ async function sendResetEmail(to, otp, name) {
   await sendEmail(to, 'PROVEXA — Password Reset OTP', html);
 }
 
+// Verify connection configuration on startup
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error("❌ SMTP Connection Verification Failed:", error.message);
+  } else {
+    console.log("✅ SMTP Server is ready to deliver messages");
+  }
+});
+
 module.exports = {
   sendOTPEmail,
   sendCertIssuedEmail,
