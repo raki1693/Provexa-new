@@ -1,26 +1,9 @@
-const nodemailer = require('nodemailer');
+const https = require('https');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: parseInt(process.env.EMAIL_PORT) === 465, // true for 465, false for 587
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
-console.log('📬 [SMTP Diagnostics] Configured variables on startup:');
-console.log(`- Host: ${process.env.EMAIL_HOST || 'smtp-relay.brevo.com'}`);
-console.log(`- Port: ${process.env.EMAIL_PORT || '587'}`);
+console.log('📬 [Brevo API Diagnostics] Configured variables on startup:');
 console.log(`- User: ${process.env.EMAIL_USER || 'Not Defined'}`);
-console.log(`- Pass Length: ${process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0}`);
-console.log(`- From Address: ${process.env.EMAIL_FROM || 'Not Defined'}`);
-
-const FROM = process.env.EMAIL_FROM || 'PROVEXA <noreply@provexa.in>';
+console.log(`- Key Length: ${process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0}`);
+console.log(`- From: ${process.env.EMAIL_FROM || 'PROVEXA <kits.guntur.ac@gmail.com>'}`);
 
 const baseStyle = `
   font-family: 'Inter', Arial, sans-serif;
@@ -64,13 +47,53 @@ function wrapEmail(title, body) {
   `;
 }
 
-async function sendEmail(to, subject, html) {
-  try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
-  } catch (err) {
-    console.error('Email send error:', err.message);
-    // Don't throw — email failure shouldn't break the API
+async function sendEmail(to, subject, htmlContent) {
+  const apiKey = process.env.EMAIL_PASS;
+  const senderEmail = process.env.EMAIL_USER || 'kits.guntur.ac@gmail.com';
+
+  if (!apiKey) {
+    console.error('❌ Brevo API key is not configured in EMAIL_PASS environment variable');
+    return;
   }
+
+  const postData = JSON.stringify({
+    sender: { name: 'PROVEXA', email: senderEmail },
+    to: [{ email: to }],
+    subject: subject,
+    htmlContent: htmlContent,
+  });
+
+  const options = {
+    hostname: 'api.brevo.com',
+    port: 443,
+    path: '/v3/smtp/email',
+    method: 'POST',
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Content-Length': Buffer.byteLength(postData),
+    },
+  };
+
+  const req = https.request(options, (res) => {
+    let responseBody = '';
+    res.on('data', (chunk) => { responseBody += chunk; });
+    res.on('end', () => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        console.log(`✅ OTP Email successfully dispatched via Brevo REST API to: ${to}`);
+      } else {
+        console.error(`❌ Brevo API Error (Status ${res.statusCode}):`, responseBody);
+      }
+    });
+  });
+
+  req.on('error', (err) => {
+    console.error('❌ Brevo API Connection Error:', err.message);
+  });
+
+  req.write(postData);
+  req.end();
 }
 
 async function sendOTPEmail(to, otp, name) {
@@ -162,15 +185,6 @@ async function sendResetEmail(to, otp, name) {
   `);
   await sendEmail(to, 'PROVEXA — Password Reset OTP', html);
 }
-
-// Verify connection configuration on startup
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("❌ SMTP Connection Verification Failed:", error.message);
-  } else {
-    console.log("✅ SMTP Server is ready to deliver messages");
-  }
-});
 
 module.exports = {
   sendOTPEmail,
