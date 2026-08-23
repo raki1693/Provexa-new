@@ -17,8 +17,8 @@ const studentSchema = new mongoose.Schema(
     institutionName: { type: String }, // stored at registration time
     password: { type: String, required: [true, 'Password is required'], minlength: 6 },
     isVerified: { type: Boolean, default: false },
-    otp: { type: String },
-    otpExpiry: { type: Date },
+    totpSecret: { type: String },
+    isTotpEnabled: { type: Boolean, default: false },
     status: { type: String, enum: ['active', 'suspended'], default: 'active' },
     profilePhoto: { type: String, default: '' },
   },
@@ -41,8 +41,7 @@ studentSchema.methods.comparePassword = async function (candidatePassword) {
 studentSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
-  delete obj.otp;
-  delete obj.otpExpiry;
+  delete obj.totpSecret;
   return obj;
 };
 

@@ -17,8 +17,8 @@ const employerSchema = new mongoose.Schema(
     mobile: { type: String },
     password: { type: String, required: [true, 'Password is required'], minlength: 6 },
     status: { type: String, enum: ['active', 'suspended'], default: 'active' },
-    otp: { type: String },
-    otpExpiry: { type: Date },
+    totpSecret: { type: String },
+    isTotpEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -36,6 +36,7 @@ employerSchema.methods.comparePassword = async function (candidatePassword) {
 employerSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.totpSecret;
   return obj;
 };
 

@@ -13,6 +13,8 @@ const { sendCertIssuedEmail, sendCertRevokedEmail, sendInstitutionApprovedEmail,
 const { generateOTP, getOTPExpiry, isOTPExpired } = require('../utils/otpUtils');
 const { buildCertificatePDF } = require('../utils/pdfBuilder');
 const { uploadFileBuffer } = require('../utils/uploadHelper');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 exports.register = async (req, res) => {
@@ -303,21 +305,39 @@ exports.clearBulkUploads = async (req, res) => {
   res.json({ success: true, message: 'All bulk upload history cleared successfully' });
 };
 
-// ─── Forgot & Reset Password ───────────────────────────────────────────────────
+// ─── Forgot & Reset Password (TOTP 2FA) ──────────────────────────────────────────
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  const resetOTP = generateOTP();
-  institution.otp = resetOTP;
-  institution.otpExpiry = getOTPExpiry(10);
+  // If 2FA is already enabled, request verification token
+  if (institution.isTotpEnabled && institution.totpSecret) {
+    return res.json({
+      success: true,
+      isSetup: true,
+      message: 'Please enter the 6-digit verification code from your Google Authenticator app.'
+    });
+  }
+
+  // Generate new secret for first-time setup
+  const secret = speakeasy.generateSecret({
+    name: `PROVEXA Institution (${institution.email})`
+  });
+
+  institution.totpSecret = secret.base32;
   await institution.save();
 
-  console.log(`🔑 [DEBUG] Password Reset OTP for Institution ${institution.email} is: ${resetOTP}`);
+  // Generate QR code data URL
+  const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
 
-  sendResetEmail(institution.email, resetOTP, institution.name);
-  res.json({ success: true, message: 'Password reset code sent to your email.' });
+  res.json({
+    success: true,
+    isSetup: false,
+    secret: secret.base32,
+    qrCodeUrl,
+    message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
+  });
 };
 
 exports.resetPassword = async (req, res) => {
@@ -326,12 +346,20 @@ exports.resetPassword = async (req, res) => {
 
   const institution = await Institution.findOne({ email: email.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'Institution not found' });
-  if (institution.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
-  if (isOTPExpired(institution.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
+  if (!institution.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
+
+  const verified = speakeasy.totp.verify({
+    secret: institution.totpSecret,
+    encoding: 'base32',
+    token: otp,
+    window: 2
+  });
+
+  if (!verified) {
+    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
+  }
 
   institution.password = password;
-  institution.otp = undefined;
-  institution.otpExpiry = undefined;
   await institution.save();
 
   res.json({ success: true, message: 'Password reset successful. You can log in now.' });
@@ -341,8 +369,25 @@ exports.verifyResetOTP = async (req, res) => {
   const { email, otp } = req.body;
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'Institution not found' });
-  if (institution.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
-  if (isOTPExpired(institution.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
+  if (!institution.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
+
+  const verified = speakeasy.totp.verify({
+    secret: institution.totpSecret,
+    encoding: 'base32',
+    token: otp,
+    window: 2
+  });
+
+  if (!verified) {
+    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
+  }
+
+  // Set as enabled on first verification success
+  if (!institution.isTotpEnabled) {
+    institution.isTotpEnabled = true;
+    await institution.save();
+  }
+
   res.json({ success: true, message: 'Reset code verified' });
 };
 
