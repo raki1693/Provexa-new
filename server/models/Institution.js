@@ -41,6 +41,14 @@ const institutionSchema = new mongoose.Schema(
     approvedAt: { type: Date },
     otp: { type: String },
     otpExpiry: { type: Date },
+    certificateDesign: {
+      templateType: {
+        type: String,
+        enum: ['default', 'elegant_gold', 'modern_emerald', 'royal_ruby'],
+        default: 'default',
+      },
+      signatureUrl: { type: String, default: '' },
+    },
   },
   { timestamps: true }
 );

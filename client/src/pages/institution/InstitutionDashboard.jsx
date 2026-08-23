@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import SidebarLayout from '../../components/SidebarLayout';
-import { HomeIcon, DocumentPlusIcon, TableCellsIcon, DocumentTextIcon, ArchiveBoxXMarkIcon, MagnifyingGlassIcon, ClockIcon, BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, DocumentPlusIcon, TableCellsIcon, DocumentTextIcon, ArchiveBoxXMarkIcon, MagnifyingGlassIcon, ClockIcon, BellIcon, UserCircleIcon, SwatchIcon } from '@heroicons/react/24/outline';
 
 const navItems = [
   { label: 'Dashboard', icon: HomeIcon, path: '/institution/dashboard' },
@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Revoke Certificate', icon: ArchiveBoxXMarkIcon, path: '/institution/revoke' },
   { label: 'Verify Certificate', icon: MagnifyingGlassIcon, path: '/institution/verify' },
   { label: 'Bulk Upload History', icon: ClockIcon, path: '/institution/bulk-history' },
+  { label: 'Certificate Design', icon: SwatchIcon, path: '/institution/design' },
   { label: 'Notifications', icon: BellIcon, path: '/institution/notifications' },
   { label: 'Profile', icon: UserCircleIcon, path: '/institution/profile' },
 ];

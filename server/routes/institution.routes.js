@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/institution.controller');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { uploadExcel } = require('../middleware/upload');
+const { uploadExcel, uploadEvidence } = require('../middleware/upload');
 
 const auth = [protect, authorize('institution')];
 
@@ -17,6 +17,7 @@ router.post('/reset-password', ctrl.resetPassword);
 // Protected routes
 router.get('/profile', ...auth, ctrl.getProfile);
 router.put('/profile', ...auth, ctrl.updateProfile);
+router.post('/design', ...auth, uploadEvidence.single('signature'), ctrl.updateCertificateDesign);
 
 router.post('/certificates/issue', ...auth, ctrl.issueCertificate);
 router.post('/certificates/bulk-issue', ...auth, uploadExcel.single('file'), ctrl.bulkIssueCertificates);

@@ -30,6 +30,7 @@ import VerifyCertificate from './pages/institution/VerifyCertificate';
 import BulkHistory from './pages/institution/BulkHistory';
 import InstitutionNotifications from './pages/institution/InstitutionNotifications';
 import InstitutionProfile from './pages/institution/InstitutionProfile';
+import CertificateDesign from './pages/institution/CertificateDesign';
 
 // Employer pages
 import EmployerLogin from './pages/employer/EmployerLogin';
@@ -107,6 +108,7 @@ export default function App() {
         <Route path="bulk-history" element={<BulkHistory />} />
         <Route path="notifications" element={<InstitutionNotifications />} />
         <Route path="profile" element={<InstitutionProfile />} />
+        <Route path="design" element={<CertificateDesign />} />
       </Route>
 
       {/* Employer portal */}
