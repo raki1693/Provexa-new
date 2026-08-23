@@ -5,8 +5,6 @@ const VerificationLog = require('../models/VerificationLog');
 const { signToken } = require('../middleware/authMiddleware');
 const { generateOTP, getOTPExpiry, isOTPExpired } = require('../utils/otpUtils');
 const { sendOTPEmail, sendResetEmail } = require('../utils/emailService');
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
 
 // Temporary storage for registrations pending OTP verification
 const tempRegistrations = new Map();
@@ -226,37 +224,21 @@ exports.checkAvailability = async (req, res) => {
   res.json({ success: true, ...results });
 };
 
-// ─── Forgot & Reset Password (TOTP 2FA) ──────────────────────────────────────────
+// ─── Forgot & Reset Password ───────────────────────────────────────────────────
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const student = await Student.findOne({ email: email?.toLowerCase() });
   if (!student) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  let secretKey = student.totpSecret;
+  const resetOTP = generateOTP();
+  student.otp = resetOTP;
+  student.otpExpiry = getOTPExpiry(10);
+  await student.save();
 
-  // Generate secret only if they don't have one yet
-  if (!secretKey) {
-    const secret = speakeasy.generateSecret({
-      name: `PROVEXA Student (${student.email})`
-    });
-    secretKey = secret.base32;
-    student.totpSecret = secretKey;
-    student.isTotpEnabled = false;
-    await student.save();
-  }
+  console.log(`🔑 [DEBUG] Password Reset OTP for Student ${student.email} is: ${resetOTP}`);
 
-  // Always generate QR code from the saved/current secret key
-  const label = encodeURIComponent(`PROVEXA:${student.email}`);
-  const otpauthUrl = `otpauth://totp/${label}?secret=${secretKey}&issuer=PROVEXA`;
-  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
-
-  res.json({
-    success: true,
-    isSetup: false,
-    secret: secretKey,
-    qrCodeUrl,
-    message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
-  });
+  sendResetEmail(student.email, resetOTP, student.name);
+  res.json({ success: true, message: 'Password reset code sent to your email.' });
 };
 
 exports.resetPassword = async (req, res) => {
@@ -265,20 +247,12 @@ exports.resetPassword = async (req, res) => {
 
   const student = await Student.findOne({ email: email.toLowerCase() });
   if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
-  if (!student.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: student.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
+  if (student.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(student.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
 
   student.password = password;
+  student.otp = undefined;
+  student.otpExpiry = undefined;
   await student.save();
 
   res.json({ success: true, message: 'Password reset successful. You can log in now.' });
@@ -288,24 +262,7 @@ exports.verifyResetOTP = async (req, res) => {
   const { email, otp } = req.body;
   const student = await Student.findOne({ email: email?.toLowerCase() });
   if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
-  if (!student.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: student.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
-
-  // Set as enabled on first verification success
-  if (!student.isTotpEnabled) {
-    student.isTotpEnabled = true;
-    await student.save();
-  }
-
-  res.json({ success: true, message: '2FA code verified' });
+  if (student.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(student.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
+  res.json({ success: true, message: 'Reset code verified' });
 };

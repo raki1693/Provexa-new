@@ -9,16 +9,12 @@ export default function ForgotPassword() {
   const queryRole = searchParams.get('role');
   const [role, setRole] = useState(queryRole || 'student');
   const [email, setEmail] = useState('');
-  const [step, setStep] = useState(1); // 1: Initiate, 2: Verify & Reset
+  const [step, setStep] = useState(1); // 1: Send OTP, 2: Verify & Reset
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  const [isSetup, setIsSetup] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [secret, setSecret] = useState('');
   
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -37,9 +33,9 @@ export default function ForgotPassword() {
     try {
       await api.post(`/${role}/verify-reset-otp`, { email, otp: otpValue });
       setIsOtpVerified(true);
-      toast.success('Authenticator code verified! Set your new password.');
+      toast.success('Reset code verified! Please set your new password.');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Incorrect authenticator code');
+      toast.error(err.response?.data?.message || 'Incorrect reset code');
       setOtp(['', '', '', '', '', '']);
       document.getElementById('otp-0')?.focus();
     } finally {
@@ -52,18 +48,11 @@ export default function ForgotPassword() {
     if (!email) return toast.error('Please enter your email');
     setLoading(true);
     try {
-      const res = await api.post(`/${role}/forgot-password`, { email });
-      setIsSetup(res.data.isSetup);
-      if (res.data.isSetup) {
-        toast.success('Please enter the code from Google Authenticator.');
-      } else {
-        setQrCodeUrl(res.data.qrCodeUrl);
-        setSecret(res.data.secret);
-        toast.success('Scan the QR code to configure Google Authenticator.');
-      }
+      await api.post(`/${role}/forgot-password`, { email });
+      toast.success('Reset code sent! Check your email.');
       setStep(2);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to initialize password reset');
+      toast.error(err.response?.data?.message || 'Failed to send reset code');
     } finally {
       setLoading(false);
     }
@@ -118,22 +107,15 @@ export default function ForgotPassword() {
   const handleResend = async () => {
     setLoading(true);
     try {
-      const res = await api.post(`/${role}/forgot-password`, { email });
-      setIsSetup(res.data.isSetup);
-      if (res.data.isSetup) {
-        toast.success('Authenticator code request refreshed.');
-      } else {
-        setQrCodeUrl(res.data.qrCodeUrl);
-        setSecret(res.data.secret);
-        toast.success('2FA Setup details refreshed.');
-      }
+      await api.post(`/${role}/forgot-password`, { email });
+      toast.success('Reset code resent to your email');
       setOtp(['', '', '', '', '', '']);
       setIsOtpVerified(false);
       setTimeout(() => {
         document.getElementById('otp-0')?.focus();
       }, 100);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to refresh 2FA');
+      toast.error(err.response?.data?.message || 'Failed to resend');
     } finally {
       setLoading(false);
     }
@@ -194,27 +176,14 @@ export default function ForgotPassword() {
                 disabled={loading}
                 className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-lg text-sm transition-colors"
               >
-                {loading ? 'Checking...' : 'Continue'}
+                {loading ? 'Sending...' : 'Send Reset Code'}
               </button>
             </form>
           ) : (
             <div>
-              {isSetup ? (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3.5 text-xs text-white/80 mb-4 text-center">
-                  <p>Open your <strong>Google Authenticator</strong> app and enter the 6-digit verification code for <strong className="text-indigo-300">{email}</strong>.</p>
-                </div>
-              ) : (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/80 mb-4 text-center">
-                  <p className="mb-2">Google Authenticator is not configured for <strong className="text-indigo-300">{email}</strong>.</p>
-                  <p className="text-[11px] text-white/60">Scan the QR code below using Google Authenticator on your phone to link it:</p>
-                  {qrCodeUrl && (
-                    <div className="my-3 bg-white p-2.5 rounded-xl inline-block shadow-lg">
-                      <img src={qrCodeUrl} alt="2FA QR Code" className="w-36 h-36 object-contain" />
-                    </div>
-                  )}
-                  <p className="text-[10px] text-white/40 break-all select-all font-mono">Secret: {secret}</p>
-                </div>
-              )}
+              <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/80 mb-4">
+                <p>We sent a 6-digit Reset OTP to <strong className="text-indigo-300">{email}</strong>.</p>
+              </div>
 
               {!isOtpVerified ? (
                 <div className="space-y-4">
@@ -238,17 +207,15 @@ export default function ForgotPassword() {
 
                   {loading && <p className="text-xs text-center text-white/60">Checking Reset Code...</p>}
 
-                  {!isSetup && (
-                    <div className="text-center">
-                      <button
-                        onClick={handleResend}
-                        disabled={loading}
-                        className="text-xs text-indigo-400 hover:underline disabled:opacity-50"
-                      >
-                        Regenerate QR Code
-                      </button>
-                    </div>
-                  )}
+                  <div className="text-center">
+                    <button
+                      onClick={handleResend}
+                      disabled={loading}
+                      className="text-xs text-indigo-400 hover:underline disabled:opacity-50"
+                    >
+                      Didn't receive code? Resend
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleResetPassword} className="space-y-4">

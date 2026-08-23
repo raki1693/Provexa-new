@@ -13,8 +13,6 @@ const { sendCertIssuedEmail, sendCertRevokedEmail, sendInstitutionApprovedEmail,
 const { generateOTP, getOTPExpiry, isOTPExpired } = require('../utils/otpUtils');
 const { buildCertificatePDF } = require('../utils/pdfBuilder');
 const { uploadFileBuffer } = require('../utils/uploadHelper');
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 exports.register = async (req, res) => {
@@ -305,37 +303,21 @@ exports.clearBulkUploads = async (req, res) => {
   res.json({ success: true, message: 'All bulk upload history cleared successfully' });
 };
 
-// ─── Forgot & Reset Password (TOTP 2FA) ──────────────────────────────────────────
+// ─── Forgot & Reset Password ───────────────────────────────────────────────────
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  let secretKey = institution.totpSecret;
+  const resetOTP = generateOTP();
+  institution.otp = resetOTP;
+  institution.otpExpiry = getOTPExpiry(10);
+  await institution.save();
 
-  // Generate secret only if they don't have one yet
-  if (!secretKey) {
-    const secret = speakeasy.generateSecret({
-      name: `PROVEXA Institution (${institution.email})`
-    });
-    secretKey = secret.base32;
-    institution.totpSecret = secretKey;
-    institution.isTotpEnabled = false;
-    await institution.save();
-  }
+  console.log(`🔑 [DEBUG] Password Reset OTP for Institution ${institution.email} is: ${resetOTP}`);
 
-  // Always generate QR code from the saved/current secret key
-  const label = encodeURIComponent(`PROVEXA:${institution.email}`);
-  const otpauthUrl = `otpauth://totp/${label}?secret=${secretKey}&issuer=PROVEXA`;
-  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
-
-  res.json({
-    success: true,
-    isSetup: false,
-    secret: secretKey,
-    qrCodeUrl,
-    message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
-  });
+  sendResetEmail(institution.email, resetOTP, institution.name);
+  res.json({ success: true, message: 'Password reset code sent to your email.' });
 };
 
 exports.resetPassword = async (req, res) => {
@@ -344,20 +326,12 @@ exports.resetPassword = async (req, res) => {
 
   const institution = await Institution.findOne({ email: email.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'Institution not found' });
-  if (!institution.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: institution.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
+  if (institution.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(institution.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
 
   institution.password = password;
+  institution.otp = undefined;
+  institution.otpExpiry = undefined;
   await institution.save();
 
   res.json({ success: true, message: 'Password reset successful. You can log in now.' });
@@ -367,25 +341,8 @@ exports.verifyResetOTP = async (req, res) => {
   const { email, otp } = req.body;
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'Institution not found' });
-  if (!institution.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: institution.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
-
-  // Set as enabled on first verification success
-  if (!institution.isTotpEnabled) {
-    institution.isTotpEnabled = true;
-    await institution.save();
-  }
-
+  if (institution.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(institution.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
   res.json({ success: true, message: 'Reset code verified' });
 };
 

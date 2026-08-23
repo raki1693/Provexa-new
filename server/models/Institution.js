@@ -39,8 +39,8 @@ const institutionSchema = new mongoose.Schema(
     rejectionReason: { type: String },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
     approvedAt: { type: Date },
-    totpSecret: { type: String },
-    isTotpEnabled: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpiry: { type: Date },
   },
   { timestamps: true }
 );
@@ -58,7 +58,6 @@ institutionSchema.methods.comparePassword = async function (candidatePassword) {
 institutionSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
-  delete obj.totpSecret;
   return obj;
 };
 

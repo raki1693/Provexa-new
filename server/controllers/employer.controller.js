@@ -9,8 +9,6 @@ const { parseExcelBuffer } = require('../utils/excelParser');
 const { sendComplaintUpdateEmail, sendResetEmail, sendOTPEmail } = require('../utils/emailService');
 const { generateOTP, getOTPExpiry, isOTPExpired } = require('../utils/otpUtils');
 const XLSX = require('xlsx');
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
 
 const tempRegistrations = new Map();
 
@@ -262,37 +260,21 @@ exports.getNotifications = async (req, res) => {
   res.json({ success: true, data: notifications, unreadCount: unread });
 };
 
-// ─── Forgot & Reset Password (TOTP 2FA) ──────────────────────────────────────────
+// ─── Forgot & Reset Password ───────────────────────────────────────────────────
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const employer = await Employer.findOne({ email: email?.toLowerCase() });
   if (!employer) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  let secretKey = employer.totpSecret;
+  const resetOTP = generateOTP();
+  employer.otp = resetOTP;
+  employer.otpExpiry = getOTPExpiry(10);
+  await employer.save();
 
-  // Generate secret only if they don't have one yet
-  if (!secretKey) {
-    const secret = speakeasy.generateSecret({
-      name: `PROVEXA Employer (${employer.email})`
-    });
-    secretKey = secret.base32;
-    employer.totpSecret = secretKey;
-    employer.isTotpEnabled = false;
-    await employer.save();
-  }
+  console.log(`🔑 [DEBUG] Password Reset OTP for Employer ${employer.email} is: ${resetOTP}`);
 
-  // Always generate QR code from the saved/current secret key
-  const label = encodeURIComponent(`PROVEXA:${employer.email}`);
-  const otpauthUrl = `otpauth://totp/${label}?secret=${secretKey}&issuer=PROVEXA`;
-  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
-
-  res.json({
-    success: true,
-    isSetup: false,
-    secret: secretKey,
-    qrCodeUrl,
-    message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
-  });
+  sendResetEmail(employer.email, resetOTP, employer.hrName || employer.companyName);
+  res.json({ success: true, message: 'Password reset code sent to your email.' });
 };
 
 exports.resetPassword = async (req, res) => {
@@ -301,20 +283,12 @@ exports.resetPassword = async (req, res) => {
 
   const employer = await Employer.findOne({ email: email.toLowerCase() });
   if (!employer) return res.status(404).json({ success: false, message: 'Employer not found' });
-  if (!employer.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: employer.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
+  if (employer.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(employer.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
 
   employer.password = password;
+  employer.otp = undefined;
+  employer.otpExpiry = undefined;
   await employer.save();
 
   res.json({ success: true, message: 'Password reset successful. You can log in now.' });
@@ -324,24 +298,7 @@ exports.verifyResetOTP = async (req, res) => {
   const { email, otp } = req.body;
   const employer = await Employer.findOne({ email: email?.toLowerCase() });
   if (!employer) return res.status(404).json({ success: false, message: 'Employer not found' });
-  if (!employer.totpSecret) return res.status(400).json({ success: false, message: '2FA secret not initialized' });
-
-  const verified = speakeasy.totp.verify({
-    secret: employer.totpSecret,
-    encoding: 'base32',
-    token: otp,
-    window: 2
-  });
-
-  if (!verified) {
-    return res.status(400).json({ success: false, message: 'Invalid 2FA code' });
-  }
-
-  // Set as enabled on first verification success
-  if (!employer.isTotpEnabled) {
-    employer.isTotpEnabled = true;
-    await employer.save();
-  }
-
+  if (employer.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+  if (isOTPExpired(employer.otpExpiry)) return res.status(400).json({ success: false, message: 'Reset code expired' });
   res.json({ success: true, message: 'Reset code verified' });
 };
