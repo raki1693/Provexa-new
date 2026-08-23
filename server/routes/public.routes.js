@@ -30,10 +30,11 @@ router.get('/verify/:certId', async (req, res) => {
 // Debug route to test SMTP connection settings and return the exact error
 router.get('/debug-smtp', async (req, res) => {
   const nodemailer = require('nodemailer');
+  const port = parseInt(process.env.EMAIL_PORT) || 587;
   const transporterConfig = {
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_PORT == '465',
+    port: port,
+    secure: port === 465,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -41,6 +42,8 @@ router.get('/debug-smtp', async (req, res) => {
     tls: {
       rejectUnauthorized: false,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
   };
 
   const results = {
