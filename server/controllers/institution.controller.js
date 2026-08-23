@@ -311,21 +311,13 @@ exports.forgotPassword = async (req, res) => {
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  // If 2FA is already enabled, request verification token
-  if (institution.isTotpEnabled && institution.totpSecret) {
-    return res.json({
-      success: true,
-      isSetup: true,
-      message: 'Please enter the 6-digit verification code from your Google Authenticator app.'
-    });
-  }
-
-  // Generate new secret for first-time setup
+  // Generate new secret for setup every single time
   const secret = speakeasy.generateSecret({
     name: `PROVEXA Institution (${institution.email})`
   });
 
   institution.totpSecret = secret.base32;
+  institution.isTotpEnabled = false;
   await institution.save();
 
   // Generate QR code data URL

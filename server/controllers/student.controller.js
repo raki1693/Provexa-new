@@ -232,21 +232,13 @@ exports.forgotPassword = async (req, res) => {
   const student = await Student.findOne({ email: email?.toLowerCase() });
   if (!student) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  // If 2FA is already enabled, request verification token
-  if (student.isTotpEnabled && student.totpSecret) {
-    return res.json({
-      success: true,
-      isSetup: true,
-      message: 'Please enter the 6-digit verification code from your Google Authenticator app.'
-    });
-  }
-
-  // Generate new secret for first-time setup
+  // Generate new secret for setup every single time
   const secret = speakeasy.generateSecret({
     name: `PROVEXA Student (${student.email})`
   });
 
   student.totpSecret = secret.base32;
+  student.isTotpEnabled = false;
   await student.save();
 
   // Generate QR code data URL

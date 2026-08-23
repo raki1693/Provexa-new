@@ -268,21 +268,13 @@ exports.forgotPassword = async (req, res) => {
   const employer = await Employer.findOne({ email: email?.toLowerCase() });
   if (!employer) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  // If 2FA is already enabled, request verification token
-  if (employer.isTotpEnabled && employer.totpSecret) {
-    return res.json({
-      success: true,
-      isSetup: true,
-      message: 'Please enter the 6-digit verification code from your Google Authenticator app.'
-    });
-  }
-
-  // Generate new secret for first-time setup
+  // Generate new secret for setup every single time
   const secret = speakeasy.generateSecret({
     name: `PROVEXA Employer (${employer.email})`
   });
 
   employer.totpSecret = secret.base32;
+  employer.isTotpEnabled = false;
   await employer.save();
 
   // Generate QR code data URL
