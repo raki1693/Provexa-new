@@ -63,7 +63,9 @@ const uploadCertPDF = {
     uploadCert.single(fieldname)(req, res, (err) => {
       if (err) return next(err);
       if (req.file && !isCloudinaryConfigured) {
-        const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.get('host');
+        const serverUrl = process.env.SERVER_URL || `${protocol}://${host}`;
         req.file.path = `${serverUrl}/uploads/certificates/${req.file.filename}`;
       }
       next();
@@ -76,7 +78,9 @@ const uploadEvidence = {
     uploadEv.single(fieldname)(req, res, (err) => {
       if (err) return next(err);
       if (req.file && !isCloudinaryConfigured) {
-        const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.get('host');
+        const serverUrl = process.env.SERVER_URL || `${protocol}://${host}`;
         req.file.path = `${serverUrl}/uploads/evidence/${req.file.filename}`;
       }
       next();
