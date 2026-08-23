@@ -22,6 +22,17 @@ export default function VerificationHistory() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear your entire verification history? This action cannot be undone.')) return;
+    try {
+      await api.delete('/employer/verification-history');
+      setLogs([]);
+      toast.success('Verification history cleared successfully');
+    } catch {
+      toast.error('Failed to clear history');
+    }
+  };
+
   useEffect(() => {
     fetchHistory();
   }, [filter]);
@@ -43,13 +54,22 @@ export default function VerificationHistory() {
           <h2 className="text-2xl font-bold text-gray-800">Verification History</h2>
           <p className="text-sm text-gray-500 mt-0.5">Audit trail of all certificates verified by your account</p>
         </div>
-        <div className="flex items-center gap-2">
-          <FunnelIcon className="w-4 h-4 text-gray-400" />
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-provexa-purple"
-          >
+        <div className="flex items-center gap-3">
+          {logs && logs.length > 0 && (
+            <button
+              onClick={handleClearHistory}
+              className="text-xs px-3.5 py-2.5 border border-red-200 text-red-600 rounded-lg bg-red-50 hover:bg-red-100 hover:text-red-700 transition-colors font-semibold"
+            >
+              Clear History
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <FunnelIcon className="w-4 h-4 text-gray-400" />
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-provexa-purple"
+            >
             <option value="">All Results</option>
             <option value="verified">Verified</option>
             <option value="revoked">Revoked</option>

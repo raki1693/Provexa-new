@@ -228,6 +228,13 @@ exports.getVerificationHistory = async (req, res) => {
   res.json({ success: true, total, data: logs });
 };
 
+// ─── Clear Verification History ────────────────────────────────────────────────
+exports.clearVerificationHistory = async (req, res) => {
+  const filter = { verifier: req.user._id, verifierType: 'employer' };
+  await VerificationLog.deleteMany(filter);
+  res.json({ success: true, message: 'Verification history cleared successfully' });
+};
+
 // ─── Create Complaint ─────────────────────────────────────────────────────────
 exports.createComplaint = async (req, res) => {
   const { certId, reason, description } = req.body;

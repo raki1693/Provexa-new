@@ -25,6 +25,7 @@ router.post('/verify/qr', ...auth, ctrl.verifyByQR);
 router.post('/verify/bulk', ...auth, uploadExcel.single('file'), ctrl.bulkVerify);
 
 router.get('/verification-history', ...auth, ctrl.getVerificationHistory);
+router.delete('/verification-history', ...auth, ctrl.clearVerificationHistory);
 
 router.post('/complaints', ...auth, uploadEvidence.single('evidence'), ctrl.createComplaint);
 router.get('/complaints', ...auth, ctrl.getComplaints);
