@@ -5,34 +5,29 @@ const VerificationLog = require('../models/VerificationLog');
 
 // GET /api/public/verify/:certId — no auth required
 router.get('/verify/:certId', async (req, res) => {
-  const cert = await Certificate.findOne({ certId: req.params.certId })
-    .populate('institution', 'name state district website type certificateDesign')
+  const { certId } = req.params;
+  const certs = await Certificate.find({ certId })
+    .populate('institution', 'name state district website type')
     .populate('student', 'name');
 
-  if (!cert) {
-    return res.json({ success: true, result: 'invalid', data: null, message: 'Certificate not found' });
+  if (!certs || certs.length === 0) {
+    return res.json({ success: true, result: 'invalid', data: [], message: 'No certificates found' });
   }
 
-  const result = cert.status === 'revoked' ? 'revoked' : 'verified';
+  const hasActive = certs.some(c => c.status === 'active');
+  const result = hasActive ? 'verified' : 'revoked';
 
-  // Log public verification
-  await VerificationLog.create({
-    cert: cert._id, certId: cert.certId,
-    verifierType: 'public', method: 'id', result, ip: req.ip,
-  });
+  // Log public verification and increment count for all
+  await Certificate.updateMany({ certId }, { $inc: { verificationCount: 1 } });
 
-  // Increment verification count
-  await Certificate.findByIdAndUpdate(cert._id, { $inc: { verificationCount: 1 } });
-
-  const certObj = cert.toObject();
-  if (certObj.institution && !certObj.institution.certificateDesign) {
-    certObj.institution.certificateDesign = {
-      templateType: 'default',
-      signatureUrl: ''
-    };
+  for (const cert of certs) {
+    await VerificationLog.create({
+      cert: cert._id, certId,
+      verifierType: 'public', method: 'id', result: cert.status === 'revoked' ? 'revoked' : 'verified', ip: req.ip,
+    });
   }
 
-  res.json({ success: true, result, data: certObj });
+  res.json({ success: true, result, data: certs });
 });
 
 module.exports = router;

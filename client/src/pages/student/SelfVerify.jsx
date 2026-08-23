@@ -9,7 +9,7 @@ export default function SelfVerify() {
   const navigate = useNavigate();
   const [certId, setCertId] = useState('');
   const [result, setResult] = useState(null);
-  const [cert, setCert] = useState(null);
+  const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const handleVerify = async (e) => {
@@ -20,10 +20,10 @@ export default function SelfVerify() {
     try {
       const res = await api.post(`/student/certificates/${certId.trim()}/verify`);
       setResult(res.data.result);
-      setCert(res.data.data);
+      setCerts(res.data.data || []);
     } catch {
       setResult('invalid');
-      setCert(null);
+      setCerts([]);
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export default function SelfVerify() {
   const handleClear = () => {
     setCertId('');
     setResult(null);
-    setCert(null);
+    setCerts([]);
     toast.success('Form cleared');
   };
 
@@ -77,17 +77,28 @@ export default function SelfVerify() {
         </form>
 
         {result && (
-          <div className={`mt-6 rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
-            <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
-            {cert && (
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-2">
-                  <div><span className="text-gray-400">Cert ID:</span> <span className="font-mono font-bold">{cert.certId}</span></div>
-                  <div><span className="text-gray-400">Status:</span> <StatusBadge status={cert.status} /></div>
-                  <div><span className="text-gray-400">Course:</span> <span className="font-medium">{cert.course}</span></div>
-                  <div><span className="text-gray-400">Institution:</span> <span className="font-medium">{cert.institutionName}</span></div>
-                </div>
-                {cert.revokeReason && <p className="text-orange-700"><strong>Revoke Reason:</strong> {cert.revokeReason}</p>}
+          <div className="space-y-4">
+            <div className={`mt-6 rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
+              <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
+            </div>
+
+            {certs && certs.length > 0 && (
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase px-1">Matched Certificates ({certs.length})</p>
+                {certs.map((c, idx) => (
+                  <div key={c._id || idx} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm space-y-3 text-sm">
+                    <div className="flex justify-between items-center border-b pb-1.5">
+                      <span className="font-semibold text-provexa-navy">Certificate #{idx + 1} ({c.certType})</span>
+                      <StatusBadge status={c.status} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                      <div><span className="text-gray-400">Cert ID:</span> <span className="font-mono font-bold">{c.certId}</span></div>
+                      <div><span className="text-gray-400">Course:</span> <span className="font-medium">{c.course}</span></div>
+                      <div><span className="text-gray-400">Institution:</span> <span className="font-medium">{c.institutionName}</span></div>
+                    </div>
+                    {c.revokeReason && <p className="text-orange-700"><strong>Revoke Reason:</strong> {c.revokeReason}</p>}
+                  </div>
+                ))}
               </div>
             )}
           </div>

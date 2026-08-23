@@ -4,8 +4,6 @@ const BulkUpload = require('../models/BulkUpload');
 const Student = require('../models/Student');
 const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
-const Complaint = require('../models/Complaint');
-const VerificationLog = require('../models/VerificationLog');
 const { signToken } = require('../middleware/authMiddleware');
 const { generateCertId } = require('../utils/certIdGenerator');
 const { hashCertData } = require('../utils/hashUtils');
@@ -65,11 +63,20 @@ exports.issueCertificate = async (req, res) => {
     return res.status(400).json({ success: false, message: 'studentEmail, course, certType, and issueDate are required' });
 
   let student = await Student.findOne({ email: studentEmail.toLowerCase() });
+  const sEmail = studentEmail.toLowerCase();
+  const rollNo = rollNumber ? String(rollNumber).trim() : '';
 
-  const certId = await generateCertId();
+  // Reuse existing student certId if present to link all their certificates to one ID
+  let existingCert = await Certificate.findOne({
+    $or: [
+      { studentEmail: sEmail },
+      { studentRollNo: rollNo ? rollNo : undefined }
+    ].filter(cond => cond.studentEmail || cond.studentRollNo)
+  });
+
+  const certId = existingCert ? existingCert.certId : await generateCertId();
   const qrUrl = await generateQRDataURL(`${process.env.CLIENT_URL || 'http://localhost:5173'}/verify/${certId}`);
   const sName = studentName || student?.name || 'Student';
-  const sEmail = studentEmail.toLowerCase();
   
   const sha256Hash = hashCertData({ certId, studentEmail: sEmail, studentName: sName, course, degree: degree || '', grade: grade || '', issueDate, institutionName: req.user.name });
 
@@ -84,7 +91,6 @@ exports.issueCertificate = async (req, res) => {
     percentage,
     issueDate,
     institutionName: req.user.name,
-    design: req.user.certificateDesign,
   });
 
   const pdfUrl = await uploadFileBuffer(pdfBuffer, `${certId}.pdf`, 'certificates');
@@ -135,10 +141,20 @@ exports.bulkIssueCertificates = async (req, res) => {
     }
     try {
       const student = await Student.findOne({ email: String(row.studentEmail).toLowerCase() });
-      const certId = await generateCertId();
+      const sEmail = String(row.studentEmail).toLowerCase();
+      const rollNo = row.rollNumber ? String(row.rollNumber).trim() : '';
+
+      // Reuse existing student certId if present to link all their certificates to one ID
+      let existingCert = await Certificate.findOne({
+        $or: [
+          { studentEmail: sEmail },
+          { studentRollNo: rollNo ? rollNo : undefined }
+        ].filter(cond => cond.studentEmail || cond.studentRollNo)
+      });
+
+      const certId = existingCert ? existingCert.certId : await generateCertId();
       const qrUrl = await generateQRDataURL(`${process.env.CLIENT_URL || 'http://localhost:5173'}/verify/${certId}`);
       const sName = row.studentName || student?.name || 'Student';
-      const sEmail = String(row.studentEmail).toLowerCase();
 
       const sha256Hash = hashCertData({ certId, studentEmail: sEmail, studentName: sName, course: row.course, degree: row.degree || '', grade: row.grade || '', issueDate: row.issueDate, institutionName: req.user.name });
 
@@ -153,7 +169,6 @@ exports.bulkIssueCertificates = async (req, res) => {
         percentage: row.percentage,
         issueDate: row.issueDate,
         institutionName: req.user.name,
-        design: req.user.certificateDesign,
       });
 
       const pdfUrl = await uploadFileBuffer(pdfBuffer, `${certId}.pdf`, 'certificates');
@@ -258,10 +273,11 @@ exports.revokeCertificate = async (req, res) => {
 
 // ─── Verify Any Certificate ───────────────────────────────────────────────────
 exports.verifyCertificate = async (req, res) => {
-  const cert = await Certificate.findOne({ certId: req.params.certId }).populate('institution', 'name').populate('student', 'name email');
-  if (!cert) return res.json({ success: true, result: 'invalid', data: null });
-  const result = cert.status === 'revoked' ? 'revoked' : 'verified';
-  res.json({ success: true, result, data: cert });
+  const certs = await Certificate.find({ certId: req.params.certId }).populate('institution', 'name').populate('student', 'name email');
+  if (!certs || certs.length === 0) return res.json({ success: true, result: 'invalid', data: [] });
+  const hasActive = certs.some(c => c.status === 'active');
+  const result = hasActive ? 'verified' : 'revoked';
+  res.json({ success: true, result, data: certs });
 };
 
 // ─── Bulk Upload History ──────────────────────────────────────────────────────
@@ -272,160 +288,16 @@ exports.getBulkUploads = async (req, res) => {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 exports.getStats = async (req, res) => {
-  const institutionId = req.user._id;
-
-  // Basic counters
   const [total, active, revoked] = await Promise.all([
-    Certificate.countDocuments({ institution: institutionId }),
-    Certificate.countDocuments({ institution: institutionId, status: 'active' }),
-    Certificate.countDocuments({ institution: institutionId, status: 'revoked' }),
+    Certificate.countDocuments({ institution: req.user._id }),
+    Certificate.countDocuments({ institution: req.user._id, status: 'active' }),
+    Certificate.countDocuments({ institution: req.user._id, status: 'revoked' }),
   ]);
-
   const verifications = await Certificate.aggregate([
-    { $match: { institution: institutionId } },
+    { $match: { institution: req.user._id } },
     { $group: { _id: null, total: { $sum: '$verificationCount' } } },
   ]);
-
-  // Aggregate monthly trends over the last 6 months
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-  sixMonthsAgo.setDate(1);
-  sixMonthsAgo.setHours(0, 0, 0, 0);
-
-  // 1. Monthly Issuances
-  const issuanceTrend = await Certificate.aggregate([
-    {
-      $match: {
-        institution: institutionId,
-        createdAt: { $gte: sixMonthsAgo }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' }
-        },
-        count: { $sum: 1 }
-      }
-    },
-    { $sort: { '_id.year': 1, '_id.month': 1 } }
-  ]);
-
-  // 2. Monthly Verifications
-  const verificationTrend = await VerificationLog.aggregate([
-    {
-      $lookup: {
-        from: 'certificates',
-        localField: 'cert',
-        foreignField: '_id',
-        as: 'certDetails'
-      }
-    },
-    { $unwind: '$certDetails' },
-    {
-      $match: {
-        'certDetails.institution': institutionId,
-        createdAt: { $gte: sixMonthsAgo }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' },
-          result: '$result'
-        },
-        count: { $sum: 1 }
-      }
-    },
-    { $sort: { '_id.year': 1, '_id.month': 1 } }
-  ]);
-
-  // 3. Security Warning: Scans on Revoked Certificates
-  const revokedHitsCount = await VerificationLog.aggregate([
-    {
-      $lookup: {
-        from: 'certificates',
-        localField: 'cert',
-        foreignField: '_id',
-        as: 'certDetails'
-      }
-    },
-    { $unwind: '$certDetails' },
-    {
-      $match: {
-        'certDetails.institution': institutionId,
-        result: 'revoked'
-      }
-    },
-    { $count: 'count' }
-  ]);
-
-  // 4. Security Warning: Active Complaints by Employers
-  const activeComplaintsCount = await Complaint.aggregate([
-    {
-      $lookup: {
-        from: 'certificates',
-        localField: 'cert',
-        foreignField: '_id',
-        as: 'certDetails'
-      }
-    },
-    { $unwind: '$certDetails' },
-    {
-      $match: {
-        'certDetails.institution': institutionId,
-        status: { $in: ['open', 'under_review'] }
-      }
-    },
-    { $count: 'count' }
-  ]);
-
-  // Format trends for frontend easy chart parsing (Recharts format)
-  const monthsList = [];
-  const tempDate = new Date(sixMonthsAgo);
-  for (let i = 0; i < 6; i++) {
-    monthsList.push({
-      year: tempDate.getFullYear(),
-      month: tempDate.getMonth() + 1,
-      monthName: tempDate.toLocaleString('en-US', { month: 'short' }),
-      issued: 0,
-      verified: 0,
-      revokedScans: 0
-    });
-    tempDate.setMonth(tempDate.getMonth() + 1);
-  }
-
-  // Populate issuance values
-  issuanceTrend.forEach((item) => {
-    const match = monthsList.find(m => m.year === item._id.year && m.month === item._id.month);
-    if (match) match.issued = item.count;
-  });
-
-  // Populate verification values
-  verificationTrend.forEach((item) => {
-    const match = monthsList.find(m => m.year === item._id.year && m.month === item._id.month);
-    if (match) {
-      if (item._id.result === 'verified') match.verified += item.count;
-      if (item._id.result === 'revoked') match.revokedScans += item.count;
-    }
-  });
-
-  res.json({
-    success: true,
-    data: {
-      total,
-      active,
-      revoked,
-      verificationRequests: verifications[0]?.total || 0,
-      trends: monthsList,
-      warnings: {
-        revokedHits: revokedHitsCount[0]?.count || 0,
-        activeComplaints: activeComplaintsCount[0]?.count || 0
-      }
-    }
-  });
+  res.json({ success: true, data: { total, active, revoked, verificationRequests: verifications[0]?.total || 0 } });
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -507,30 +379,5 @@ exports.searchInstitutions = async (req, res) => {
     res.json({ success: true, data: institutions });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to search institutions' });
-  }
-};
-
-exports.updateCertificateDesign = async (req, res) => {
-  try {
-    const { templateType } = req.body;
-    const signatureUrl = req.file?.path;
-
-    const updateData = {};
-    if (templateType) updateData['certificateDesign.templateType'] = templateType;
-    if (signatureUrl) updateData['certificateDesign.signatureUrl'] = signatureUrl;
-
-    const institution = await Institution.findByIdAndUpdate(
-      req.user._id,
-      { $set: updateData },
-      { new: true }
-    );
-
-    res.json({
-      success: true,
-      message: 'Certificate design updated successfully',
-      data: institution.certificateDesign,
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to update certificate design' });
   }
 };

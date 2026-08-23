@@ -1,44 +1,5 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const { generateQRBuffer } = require('./qrGenerator');
-const https = require('https');
-
-// Color palettes for design templates
-const palettes = {
-  default: {
-    primary: rgb(0.11, 0.31, 0.45),      // Navy Blue (#1B4F72)
-    secondary: rgb(0.18, 0.53, 0.76),    // Light Blue (#2E86C1)
-    borderWidth: 5
-  },
-  elegant_gold: {
-    primary: rgb(0.72, 0.53, 0.04),      // Dark Gold (#B8860B)
-    secondary: rgb(0.85, 0.73, 0.38),    // Light Gold (#D7C460)
-    borderWidth: 6
-  },
-  modern_emerald: {
-    primary: rgb(0.08, 0.35, 0.20),      // Dark Emerald (#145A32)
-    secondary: rgb(0.12, 0.52, 0.29),    // Light Emerald (#1E8449)
-    borderWidth: 5
-  },
-  royal_ruby: {
-    primary: rgb(0.39, 0.12, 0.09),      // Dark Ruby (#641E16)
-    secondary: rgb(0.57, 0.17, 0.13),    // Light Ruby (#922B21)
-    borderWidth: 5
-  }
-};
-
-// Helper utility to download signature image from web URL (Cloudinary)
-function downloadImageBytes(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      if (res.statusCode !== 200) {
-        return reject(new Error(`Failed to download signature image: Status ${res.statusCode}`));
-      }
-      const chunks = [];
-      res.on('data', (chunk) => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-    }).on('error', reject);
-  });
-}
 
 /**
  * Builds a certificate PDF using pdf-lib and embeds the QR code.
@@ -57,18 +18,14 @@ async function buildCertificatePDF(certData) {
   const fontHelveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontCourierBold = await pdfDoc.embedFont(StandardFonts.CourierBold);
 
-  // Load selected template style
-  const design = certData.design || {};
-  const t = palettes[design.templateType] || palettes.default;
-
   // Draw background border
   page.drawRectangle({
     x: 20,
     y: 20,
     width: width - 40,
     height: height - 40,
-    borderColor: t.primary,
-    borderWidth: t.borderWidth,
+    borderColor: rgb(0.11, 0.31, 0.45), // Navy blue
+    borderWidth: 5,
   });
 
   page.drawRectangle({
@@ -76,7 +33,7 @@ async function buildCertificatePDF(certData) {
     y: 28,
     width: width - 56,
     height: height - 56,
-    borderColor: t.secondary,
+    borderColor: rgb(0.18, 0.53, 0.76), // Light blue
     borderWidth: 2,
   });
 
@@ -86,7 +43,7 @@ async function buildCertificatePDF(certData) {
     y: 480,
     size: 28,
     font: fontHelveticaBold,
-    color: t.primary,
+    color: rgb(0.11, 0.31, 0.45),
   });
 
   page.drawText('AUTHENTICITY VALIDATOR FOR ACADEMIA', {
@@ -103,7 +60,7 @@ async function buildCertificatePDF(certData) {
     y: 530,
     size: 12,
     font: fontCourierBold,
-    color: t.primary,
+    color: rgb(0.11, 0.31, 0.45),
   });
 
   // Body text
@@ -122,7 +79,7 @@ async function buildCertificatePDF(certData) {
     y: 330,
     size: 24,
     font: fontHelveticaBold,
-    color: t.primary,
+    color: rgb(0.11, 0.31, 0.45),
   });
 
   // Achievement text
@@ -157,7 +114,7 @@ async function buildCertificatePDF(certData) {
       y: 220,
       size: 14,
       font: fontHelveticaBold,
-      color: t.secondary,
+      color: rgb(0.18, 0.53, 0.76),
     });
   }
 
@@ -184,8 +141,11 @@ async function buildCertificatePDF(certData) {
   });
 
   // Embed QR Code
+  // Generate a verification URL QR code
   const qrUrlText = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify/${certData.certId}`;
   const qrBuffer = await generateQRBuffer(qrUrlText);
+  
+  // Embed PNG QR Code
   const qrImage = await pdfDoc.embedPng(qrBuffer);
   
   page.drawImage(qrImage, {
@@ -218,29 +178,6 @@ async function buildCertificatePDF(certData) {
     font: fontHelvetica,
     color: rgb(0.5, 0.5, 0.5),
   });
-
-  // Fetch and embed authorized signature image if configured
-  if (design.signatureUrl) {
-    try {
-      const sigBuffer = await downloadImageBytes(design.signatureUrl);
-      const isJpg = design.signatureUrl.toLowerCase().includes('.jpg') || design.signatureUrl.toLowerCase().includes('.jpeg');
-      let sigImage;
-      if (isJpg) {
-        sigImage = await pdfDoc.embedJpg(sigBuffer);
-      } else {
-        sigImage = await pdfDoc.embedPng(sigBuffer);
-      }
-      
-      page.drawImage(sigImage, {
-        x: 90,
-        y: 155,
-        width: 100,
-        height: 38,
-      });
-    } catch (err) {
-      console.error('❌ Failed to embed signature in PDF:', err.message);
-    }
-  }
 
   // Save the PDF document to bytes
   const pdfBytes = await pdfDoc.save();

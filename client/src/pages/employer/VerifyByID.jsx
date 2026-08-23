@@ -9,7 +9,7 @@ export default function VerifyByID() {
   const navigate = useNavigate();
   const [certId, setCertId] = useState('');
   const [result, setResult] = useState(null);
-  const [cert, setCert] = useState(null);
+  const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const handleVerify = async (e) => {
@@ -20,10 +20,10 @@ export default function VerifyByID() {
     try {
       const res = await api.get(`/employer/verify/${certId.trim()}`);
       setResult(res.data.result);
-      setCert(res.data.data);
+      setCerts(res.data.data || []);
     } catch {
       setResult('invalid');
-      setCert(null);
+      setCerts([]);
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export default function VerifyByID() {
   const handleClear = () => {
     setCertId('');
     setResult(null);
-    setCert(null);
+    setCerts([]);
     toast.success('Form cleared');
   };
 
@@ -79,34 +79,46 @@ export default function VerifyByID() {
         </form>
 
         {result && (
-          <div className={`mt-6 rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
-            <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
-            {cert && (
-              <div className="mt-4 space-y-4 border-t pt-4">
-                <h3 className="font-semibold text-gray-800 text-sm">Certificate Verification details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-gray-400">Student Name:</span> <span className="font-semibold text-gray-800">{cert.studentName}</span></div>
-                  <div><span className="text-gray-400">Student Email:</span> <span className="text-gray-800">{cert.studentEmail}</span></div>
-                  <div><span className="text-gray-400">Course Name:</span> <span className="text-gray-800">{cert.course}</span></div>
-                  {cert.degree && <div><span className="text-gray-400">Degree:</span> <span className="text-gray-800">{cert.degree}</span></div>}
-                  <div><span className="text-gray-400">Institution:</span> <span className="text-gray-800">{cert.institutionName}</span></div>
-                  <div><span className="text-gray-400">Status:</span> <StatusBadge status={cert.status} /></div>
-                  <div><span className="text-gray-400">Issue Date:</span> <span className="text-gray-800">{formatDate(cert.issueDate)}</span></div>
-                  {cert.grade && <div><span className="text-gray-400">Grade:</span> <span className="text-gray-800">{cert.grade}</span></div>}
+          <div className="mt-6 space-y-4">
+            <div className={`rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
+              <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
+            </div>
+
+            {certs && certs.length > 0 && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="font-bold text-gray-700 text-sm">Linked Certificates ({certs.length})</h3>
                 </div>
-                {cert.revokeReason && <p className="text-orange-700 bg-orange-100 p-2.5 rounded-lg text-xs mt-2"><strong>Revocation Reason:</strong> {cert.revokeReason}</p>}
-                
-                {cert.sha256Hash && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-400 uppercase">SHA-256 Hash</p>
-                    <div className="flex items-center gap-2 bg-gray-50 rounded p-2">
-                      <code className="text-xs text-gray-600 break-all flex-1">{cert.sha256Hash}</code>
-                      <button onClick={() => { navigator.clipboard.writeText(cert.sha256Hash); toast.success('Hash copied'); }}>
-                        <ClipboardDocumentIcon className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                      </button>
+                {certs.map((c, idx) => (
+                  <div key={c._id || idx} className="bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="font-semibold text-provexa-purple text-sm">Certificate #{idx + 1} ({c.certType})</span>
+                      <StatusBadge status={c.status} />
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div><span className="text-gray-400">Student Name:</span> <span className="font-semibold text-gray-800">{c.studentName}</span></div>
+                      <div><span className="text-gray-400">Student Email:</span> <span className="text-gray-800">{c.studentEmail}</span></div>
+                      <div><span className="text-gray-400">Course Name:</span> <span className="text-gray-800">{c.course}</span></div>
+                      {c.degree && <div><span className="text-gray-400">Degree:</span> <span className="text-gray-800">{c.degree}</span></div>}
+                      <div><span className="text-gray-400">Institution:</span> <span className="text-gray-800">{c.institutionName}</span></div>
+                      <div><span className="text-gray-400">Issue Date:</span> <span className="text-gray-800">{formatDate(c.issueDate)}</span></div>
+                      {c.grade && <div><span className="text-gray-400">Grade:</span> <span className="text-gray-800">{c.grade}</span></div>}
+                    </div>
+                    {c.revokeReason && <p className="text-orange-700 bg-orange-100 p-2.5 rounded-lg text-xs mt-2"><strong>Revocation Reason:</strong> {c.revokeReason}</p>}
+                    
+                    {c.sha256Hash && (
+                      <div className="mt-2 border-t pt-2">
+                        <p className="text-xs text-gray-400 uppercase mb-1">SHA-256 Hash</p>
+                        <div className="flex items-center gap-2 bg-white border rounded p-2">
+                          <code className="text-xs text-gray-600 break-all flex-1">{c.sha256Hash}</code>
+                          <button onClick={() => { navigator.clipboard.writeText(c.sha256Hash); toast.success('Hash copied'); }}>
+                            <ClipboardDocumentIcon className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>

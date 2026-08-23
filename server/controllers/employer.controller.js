@@ -126,23 +126,26 @@ exports.updateProfile = async (req, res) => {
 // ─── Verify by ID ─────────────────────────────────────────────────────────────
 exports.verifyById = async (req, res) => {
   const { certId } = req.params;
-  const cert = await Certificate.findOne({ certId })
+  const certs = await Certificate.find({ certId })
     .populate('institution', 'name state district')
     .populate('student', 'name');
 
   let result = 'invalid';
-  if (cert) {
-    result = cert.status === 'revoked' ? 'revoked' : 'verified';
-    await Certificate.findByIdAndUpdate(cert._id, { $inc: { verificationCount: 1 } });
+  if (certs && certs.length > 0) {
+    const hasActive = certs.some(c => c.status === 'active');
+    result = hasActive ? 'verified' : 'revoked';
+    await Certificate.updateMany({ certId }, { $inc: { verificationCount: 1 } });
+    
+    for (const cert of certs) {
+      await VerificationLog.create({
+        cert: cert._id, certId, verifierType: 'employer',
+        verifier: req.user._id, verifierEmail: req.user.email,
+        method: 'id', result: cert.status === 'revoked' ? 'revoked' : 'verified', ip: req.ip,
+      });
+    }
   }
 
-  await VerificationLog.create({
-    cert: cert?._id, certId, verifierType: 'employer',
-    verifier: req.user._id, verifierEmail: req.user.email,
-    method: 'id', result, ip: req.ip,
-  });
-
-  res.json({ success: true, result, data: cert || null });
+  res.json({ success: true, result, data: certs });
 };
 
 // ─── Verify by QR (frontend decodes QR, sends certId) ────────────────────────
@@ -150,23 +153,26 @@ exports.verifyByQR = async (req, res) => {
   const { certId } = req.body;
   if (!certId) return res.status(400).json({ success: false, message: 'certId is required' });
 
-  const cert = await Certificate.findOne({ certId })
+  const certs = await Certificate.find({ certId })
     .populate('institution', 'name state district')
     .populate('student', 'name');
 
   let result = 'invalid';
-  if (cert) {
-    result = cert.status === 'revoked' ? 'revoked' : 'verified';
-    await Certificate.findByIdAndUpdate(cert._id, { $inc: { verificationCount: 1 } });
+  if (certs && certs.length > 0) {
+    const hasActive = certs.some(c => c.status === 'active');
+    result = hasActive ? 'verified' : 'revoked';
+    await Certificate.updateMany({ certId }, { $inc: { verificationCount: 1 } });
+    
+    for (const cert of certs) {
+      await VerificationLog.create({
+        cert: cert._id, certId, verifierType: 'employer',
+        verifier: req.user._id, verifierEmail: req.user.email,
+        method: 'qr', result: cert.status === 'revoked' ? 'revoked' : 'verified', ip: req.ip,
+      });
+    }
   }
 
-  await VerificationLog.create({
-    cert: cert?._id, certId, verifierType: 'employer',
-    verifier: req.user._id, verifierEmail: req.user.email,
-    method: 'qr', result, ip: req.ip,
-  });
-
-  res.json({ success: true, result, data: cert || null });
+  res.json({ success: true, result, data: certs });
 };
 
 // ─── Bulk Verify ──────────────────────────────────────────────────────────────

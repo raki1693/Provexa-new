@@ -9,7 +9,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 export default function VerifyByQR() {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
-  const [cert, setCert] = useState(null);
+  const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const handleScan = async (certId) => {
@@ -19,10 +19,10 @@ export default function VerifyByQR() {
     try {
       const res = await api.post('/employer/verify/qr', { certId });
       setResult(res.data.result);
-      setCert(res.data.data);
+      setCerts(res.data.data || []);
     } catch {
       setResult('invalid');
-      setCert(null);
+      setCerts([]);
     } finally {
       setLoading(false);
     }
@@ -30,7 +30,7 @@ export default function VerifyByQR() {
 
   const handleClear = () => {
     setResult(null);
-    setCert(null);
+    setCerts([]);
     toast.success('Results cleared');
   };
 
@@ -70,19 +70,31 @@ export default function VerifyByQR() {
         )}
 
         {result && !loading && (
-          <div className={`rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
-            <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
-            {cert && (
-              <div className="mt-4 space-y-3 border-t pt-3 text-sm">
-                <div className="grid grid-cols-2 gap-2">
-                  <div><span className="text-gray-400">Student:</span> <span className="font-semibold text-gray-800">{cert.studentName}</span></div>
-                  <div><span className="text-gray-400">Course:</span> <span className="text-gray-800">{cert.course}</span></div>
-                  <div><span className="text-gray-400">Institution:</span> <span className="text-gray-800">{cert.institutionName}</span></div>
-                  <div><span className="text-gray-400">Status:</span> <StatusBadge status={cert.status} /></div>
-                  <div><span className="text-gray-400">Issue Date:</span> <span className="text-gray-800">{formatDate(cert.issueDate)}</span></div>
-                  {cert.grade && <div><span className="text-gray-400">Grade:</span> <span className="text-gray-800">{cert.grade}</span></div>}
-                </div>
-                {cert.revokeReason && <p className="text-orange-700 bg-orange-100 p-2.5 rounded-lg text-xs mt-2"><strong>Revocation Reason:</strong> {cert.revokeReason}</p>}
+          <div className="space-y-4">
+            <div className={`rounded-xl p-5 border-2 ${resultStyles[result].bg} ${resultStyles[result].border}`}>
+              <p className={`font-bold text-base ${resultStyles[result].text}`}>{resultStyles[result].label}</p>
+            </div>
+
+            {certs && certs.length > 0 && (
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase px-1">Linked Certificates ({certs.length})</p>
+                {certs.map((c, idx) => (
+                  <div key={c._id || idx} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm space-y-3 text-sm">
+                    <div className="flex justify-between items-center border-b pb-1.5">
+                      <span className="font-semibold text-provexa-purple">Certificate #{idx + 1} ({c.certType})</span>
+                      <StatusBadge status={c.status} />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+                      <div><span className="text-gray-400">Student:</span> <span className="font-semibold text-gray-800">{c.studentName}</span></div>
+                      <div><span className="text-gray-400">Course:</span> <span className="text-gray-800">{c.course}</span></div>
+                      {c.degree && <div><span className="text-gray-400">Degree:</span> <span className="text-gray-800">{c.degree}</span></div>}
+                      <div><span className="text-gray-400">Institution:</span> <span className="text-gray-800">{c.institutionName}</span></div>
+                      <div><span className="text-gray-400">Issue Date:</span> <span className="text-gray-800">{formatDate(c.issueDate)}</span></div>
+                      {c.grade && <div><span className="text-gray-400">Grade:</span> <span className="text-gray-800">{c.grade}</span></div>}
+                    </div>
+                    {c.revokeReason && <p className="text-orange-700 bg-orange-100 p-2 rounded-lg text-xs mt-1"><strong>Revocation Reason:</strong> {c.revokeReason}</p>}
+                  </div>
+                ))}
               </div>
             )}
           </div>

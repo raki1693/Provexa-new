@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const certificateSchema = new mongoose.Schema(
   {
-    certId: { type: String, unique: true, required: true }, // PRVX-XXXXXXXX
+    certId: { type: String, required: true }, // PRVX-XXXXXXXX (shared per student)
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
     institution: { type: mongoose.Schema.Types.ObjectId, ref: 'Institution', required: true },
 
@@ -42,5 +42,16 @@ const certificateSchema = new mongoose.Schema(
 // Index for fast lookups
 certificateSchema.index({ student: 1 });
 certificateSchema.index({ institution: 1 });
+
+// Programmatically drop the old unique index for certId on startup if it exists
+mongoose.connection.on('connected', async () => {
+  try {
+    const db = mongoose.connection.db;
+    await db.collection('certificates').dropIndex('certId_1');
+    console.log('✅ Successfully dropped old unique index certId_1');
+  } catch (err) {
+    // Index might already be dropped, ignore error
+  }
+});
 
 module.exports = mongoose.model('Certificate', certificateSchema);

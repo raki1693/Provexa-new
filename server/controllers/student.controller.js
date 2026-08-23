@@ -180,18 +180,21 @@ exports.getShareableLink = async (req, res) => {
 // ─── Self Verify ──────────────────────────────────────────────────────────────
 exports.verifyCertificate = async (req, res) => {
   const { certId } = req.params;
-  const cert = await Certificate.findOne({ certId }).populate('institution', 'name');
+  const certs = await Certificate.find({ certId }).populate('institution', 'name');
   let result = 'invalid';
-  if (cert) {
-    result = cert.status === 'revoked' ? 'revoked' : 'verified';
-    await Certificate.findByIdAndUpdate(cert._id, { $inc: { verificationCount: 1 } });
-    await VerificationLog.create({
-      cert: cert._id, certId, verifierType: 'student',
-      verifier: req.user._id, verifierEmail: req.user.email,
-      method: 'id', result, ip: req.ip,
-    });
+  if (certs && certs.length > 0) {
+    const hasActive = certs.some(c => c.status === 'active');
+    result = hasActive ? 'verified' : 'revoked';
+    await Certificate.updateMany({ certId }, { $inc: { verificationCount: 1 } });
+    for (const cert of certs) {
+      await VerificationLog.create({
+        cert: cert._id, certId, verifierType: 'student',
+        verifier: req.user._id, verifierEmail: req.user.email,
+        method: 'id', result: cert.status === 'revoked' ? 'revoked' : 'verified', ip: req.ip,
+      });
+    }
   }
-  res.json({ success: true, result, data: cert || null });
+  res.json({ success: true, result, data: certs });
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
