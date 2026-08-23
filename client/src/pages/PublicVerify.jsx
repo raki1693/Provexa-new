@@ -13,6 +13,20 @@ export default function PublicVerify() {
   const [searchId, setSearchId] = useState(certId !== 'quick' ? certId : '');
   const [searched, setSearched] = useState(certId !== 'quick');
 
+  const borderColors = {
+    default: '#1B4F72',
+    elegant_gold: '#B8860B',
+    modern_emerald: '#145A32',
+    royal_ruby: '#641E16',
+  };
+
+  const secondaryBorderColors = {
+    default: '#2E86C1',
+    elegant_gold: '#D7C460',
+    modern_emerald: '#1E8449',
+    royal_ruby: '#922B21',
+  };
+
   const verify = async (id) => {
     if (!id) return;
     setLoading(true);
@@ -129,9 +143,84 @@ export default function PublicVerify() {
                       </div>
                     )}
 
-                    {cert.qrUrl && (
-                      <div className="flex justify-center mt-4">
-                        <img src={cert.qrUrl} alt="Certificate QR" className="w-32 h-32" />
+                    {cert.pdfUrl && (
+                      <div className="mt-4 flex justify-center">
+                        <a
+                          href={cert.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                        >
+                          📥 Download Official PDF Certificate
+                        </a>
+                      </div>
+                    )}
+
+                    {cert.institution?.certificateDesign && (
+                      <div className="mt-6 border-t border-gray-100 pt-6">
+                        <p className="text-[10px] font-bold text-gray-400 mb-3 text-center uppercase tracking-wider">Credential Visual Preview</p>
+                        <div className="flex items-center justify-center">
+                          <div
+                            className="w-full max-w-sm aspect-[1.414/1] bg-white border-[6px] rounded-lg p-5 relative flex flex-col justify-between shadow-sm text-center"
+                            style={{ borderColor: borderColors[cert.institution.certificateDesign.templateType || 'default'] }}
+                          >
+                            <div
+                              className="absolute inset-2 border border-dashed rounded"
+                              style={{ borderColor: secondaryBorderColors[cert.institution.certificateDesign.templateType || 'default'] }}
+                            />
+                            
+                            <div className="relative z-10 flex flex-col justify-between h-full text-center">
+                              <div className="mt-1">
+                                <h4 className="text-[10px] tracking-widest font-black uppercase" style={{ color: borderColors[cert.institution.certificateDesign.templateType || 'default'] }}>
+                                  PROVEXA ACADEMIC CERTIFICATE
+                                </h4>
+                                <p className="text-[7px] text-gray-400 font-medium tracking-wide mt-0.5">AUTHENTICITY VALIDATOR FOR ACADEMIA</p>
+                              </div>
+
+                              <div className="my-2">
+                                <p className="text-[8px] text-gray-450">This is to certify that</p>
+                                <p className="text-sm font-extrabold uppercase tracking-wider my-0.5" style={{ color: borderColors[cert.institution.certificateDesign.templateType || 'default'] }}>
+                                  {cert.studentName}
+                                </p>
+                                <p className="text-[8px] text-gray-500 leading-snug">
+                                  has successfully completed the course in <strong className="text-gray-700">{cert.course}</strong>
+                                </p>
+                                {cert.grade && (
+                                  <p className="text-[9px] font-extrabold mt-1" style={{ color: secondaryBorderColors[cert.institution.certificateDesign.templateType || 'default'] }}>
+                                    Grade: {cert.grade} {cert.percentage ? `(${cert.percentage}%)` : ''}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex justify-between items-end px-3">
+                                {/* Signature */}
+                                <div className="text-left flex flex-col items-center">
+                                  {cert.institution.certificateDesign.signatureUrl ? (
+                                    <img src={cert.institution.certificateDesign.signatureUrl} alt="Signature" className="h-5 object-contain mb-0.5 max-w-[60px]" />
+                                  ) : (
+                                    <div className="h-5 w-12 border border-dashed border-gray-200 rounded flex items-center justify-center text-[6px] text-gray-300 mb-0.5">
+                                      No Sig
+                                    </div>
+                                  )}
+                                  <div className="w-16 border-t border-gray-200 my-0.5" />
+                                  <span className="text-[6px] text-gray-400">Authorized Signatory</span>
+                                </div>
+
+                                {/* QR Code */}
+                                <div className="text-right flex flex-col items-center">
+                                  {cert.qrUrl ? (
+                                    <img src={cert.qrUrl} alt="QR" className="w-7 h-7 mb-0.5" />
+                                  ) : (
+                                    <div className="w-7 h-7 border border-gray-200 bg-gray-50 rounded flex items-center justify-center text-[6px] text-gray-350 mb-0.5">
+                                      QR
+                                    </div>
+                                  )}
+                                  <span className="text-[5px] text-gray-400">Scan to Verify</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 

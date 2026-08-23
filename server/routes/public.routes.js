@@ -6,7 +6,7 @@ const VerificationLog = require('../models/VerificationLog');
 // GET /api/public/verify/:certId — no auth required
 router.get('/verify/:certId', async (req, res) => {
   const cert = await Certificate.findOne({ certId: req.params.certId })
-    .populate('institution', 'name state district website type')
+    .populate('institution', 'name state district website type certificateDesign')
     .populate('student', 'name');
 
   if (!cert) {
