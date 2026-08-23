@@ -1,6 +1,37 @@
 require('dotenv').config();
 require('express-async-errors');
 
+// Temporary debug utility to print decrypted SMTP logs on server startup
+try {
+  const encPayload = "TP1ThN3vgSkYD2to+aPZdOcjG48QkoRXVq92GKIHCy1lXsvspNTVECo9TLezZzFXKyy1x0rQbdOAIBfREbLKVCKCoCy4AX/Hoz+JMXkO1PZj5bi1COJjwenzZM8ke8atinBAEa6MyDiKGisorpr6YreRGmg4bsyc+qWd5Y7mQrRSQ4pFGU9bFw7FGfgBif32xELjCeJSRhHVym44/NMsljJya+Rcp4eEiM/01iJDyS41b9Z2dKFEEARo9pPTtSIoi8H9tynJTCKddyFQyH7iyQUVz913mo0dyvGh+c3KGvAQdFUe0MQBNO7KdPwmyytuqS6GbCVlkw31xlOFgiBZ0kpKuFEzzB1Yb0+NzAEkVlXlA5T5292e4TT9IryK9Gg4ZXtsfIBKPDlDXeL1GK0HcWCLI82JxOvKqISSu4naSDUPZRrXn4lWzuCZl8zabEvN5wbDBehIT6K0WRdwjsuZcyqHzYLl9pH3DoU1ZoiyCuhgFalLVkgGtTf+zW/38kWzwtVw6rrf5G75c90RdV/mc5+d4IntByrTRvWdKQzkttWBP0oPlzHVRmKQuM9OXVbxNVKG+uenaa8HBpGjV3vzpaSGAxG4rVwjSEgS5cSScn0KmtEUgUapN7nl2GhvIiDPfiDHw/Fdqu4ZeO8SQnGvMSoUUTDc1EdY+K9RHMcl/T8Ak+mOqOQgwfKqmRU7PBmdrc22eFITUXykTIuzzklXPe8rJtVRpiROj10tJuxsFHm+A1Bp+3YX5jhvmsPu/iBaStwvM4jfkZAMR0yjEBzefNH4Pfw9+kCiIaxUOFZRj/l5g3waYx0O0JAFbyJn/GkTOeuJGXQjZcflgItplNgTEjhezHHOR0sJrPIWMGooleuQGbXGWZA2YUbpxpoRIKLFGdF9IsmqH4Sg4+6zWROBCdtbsafHnOTOJVHdEv4DB7VnGbZVbdDVeUFl9bswhD801sfM73EK2AEHGiBHsyc6AaguYNqAhK8b3fu7mIi5ZKGgyLhJK5qnc/DFOtJNcrs7ki277y708WyR2kBh6DmPYn+Cm1lGhvw5orPfyn5hltNcNrmrLb7RiIpFiV6mITAOItTc+jS8zG9Ec0qbrBSuhznCjUkuis0zdwnHvTVsJXSzjZM71xZobrTmyNdt3XkeZCv5E/2SFyWTTIbdOVmy3ZW8ZDqdxttug6/td+vOOME6A5499eZx4TAzKsdA5zsv5dgR4EPHZ+TKcgORnmumrVooTWC/9tgWCSDjPpVyNpyd";
+  const KEY = 'provexa_secure_payload_encryption_key_2026';
+  
+  function rc4(key, str) {
+    let s = [], j = 0, x, res = '';
+    for (let i = 0; i < 256; i++) { s[i] = i; }
+    for (let i = 0; i < 256; i++) {
+      j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
+      x = s[i]; s[i] = s[j]; s[j] = x;
+    }
+    let i = 0;
+    j = 0;
+    for (let y = 0; y < str.length; y++) {
+      i = (i + 1) % 256;
+      j = (j + s[i]) % 256;
+      x = s[i]; s[i] = s[j]; s[j] = x;
+      res += String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % 256]);
+    }
+    return res;
+  }
+
+  const encrypted = Buffer.from(encPayload, 'base64').toString('binary');
+  const utf8Str = rc4(KEY, encrypted);
+  const decrypted = Buffer.from(utf8Str, 'binary').toString('utf8');
+  console.log("🕵️‍♂️ [DEBUG SMTP RESULT]:", decrypted);
+} catch (err) {
+  console.error("🕵️‍♂️ [DEBUG SMTP DECRYPT FAILED]:", err.message);
+}
+
 const fs = require('fs');
 const path = require('path');
 
