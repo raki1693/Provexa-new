@@ -268,22 +268,28 @@ exports.forgotPassword = async (req, res) => {
   const employer = await Employer.findOne({ email: email?.toLowerCase() });
   if (!employer) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  // Generate new secret for setup every single time
-  const secret = speakeasy.generateSecret({
-    name: `PROVEXA Employer (${employer.email})`
-  });
+  let secretKey = employer.totpSecret;
 
-  employer.totpSecret = secret.base32;
-  employer.isTotpEnabled = false;
-  await employer.save();
+  // Generate secret only if they don't have one yet
+  if (!secretKey) {
+    const secret = speakeasy.generateSecret({
+      name: `PROVEXA Employer (${employer.email})`
+    });
+    secretKey = secret.base32;
+    employer.totpSecret = secretKey;
+    employer.isTotpEnabled = false;
+    await employer.save();
+  }
 
-  // Generate QR code data URL
-  const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+  // Always generate QR code from the saved/current secret key
+  const label = encodeURIComponent(`PROVEXA:${employer.email}`);
+  const otpauthUrl = `otpauth://totp/${label}?secret=${secretKey}&issuer=PROVEXA`;
+  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
 
   res.json({
     success: true,
     isSetup: false,
-    secret: secret.base32,
+    secret: secretKey,
     qrCodeUrl,
     message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
   });

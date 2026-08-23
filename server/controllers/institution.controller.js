@@ -311,22 +311,28 @@ exports.forgotPassword = async (req, res) => {
   const institution = await Institution.findOne({ email: email?.toLowerCase() });
   if (!institution) return res.status(404).json({ success: false, message: 'No account found with this email' });
 
-  // Generate new secret for setup every single time
-  const secret = speakeasy.generateSecret({
-    name: `PROVEXA Institution (${institution.email})`
-  });
+  let secretKey = institution.totpSecret;
 
-  institution.totpSecret = secret.base32;
-  institution.isTotpEnabled = false;
-  await institution.save();
+  // Generate secret only if they don't have one yet
+  if (!secretKey) {
+    const secret = speakeasy.generateSecret({
+      name: `PROVEXA Institution (${institution.email})`
+    });
+    secretKey = secret.base32;
+    institution.totpSecret = secretKey;
+    institution.isTotpEnabled = false;
+    await institution.save();
+  }
 
-  // Generate QR code data URL
-  const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+  // Always generate QR code from the saved/current secret key
+  const label = encodeURIComponent(`PROVEXA:${institution.email}`);
+  const otpauthUrl = `otpauth://totp/${label}?secret=${secretKey}&issuer=PROVEXA`;
+  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
 
   res.json({
     success: true,
     isSetup: false,
-    secret: secret.base32,
+    secret: secretKey,
     qrCodeUrl,
     message: 'Scan the QR code with Google Authenticator, then enter the 6-digit code.'
   });
