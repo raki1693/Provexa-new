@@ -59,8 +59,8 @@ app.use((req, res, next) => {
   // Intercept and encrypt outgoing JSON response payload
   const originalJson = res.json;
   res.json = function (body) {
-    // Skip encryption for health check route or if it is already encrypted
-    if (req.path === '/api/health' || (body && body.encryptedData)) {
+    // Skip encryption for health check route, debug route, or if it is already encrypted
+    if (req.path === '/api/health' || req.path === '/api/public/debug-smtp' || (body && body.encryptedData)) {
       return originalJson.call(this, body);
     }
     if (body && typeof body === 'object') {
