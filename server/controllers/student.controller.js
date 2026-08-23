@@ -40,7 +40,7 @@ exports.register = async (req, res) => {
 
   console.log(`🔑 [DEBUG] Generated OTP for ${email.toLowerCase()} is: ${otp}`);
 
-  await sendOTPEmail(email.toLowerCase(), otp, name);
+  sendOTPEmail(email.toLowerCase(), otp, name);
   res.status(201).json({ success: true, message: 'Registration successful. OTP sent to your email.', email: email.toLowerCase() });
 };
 
@@ -100,7 +100,7 @@ exports.resendOTP = async (req, res) => {
 
   console.log(`🔑 [DEBUG] Generated OTP for ${temp.email} is: ${otp}`);
 
-  await sendOTPEmail(temp.email, otp, temp.name);
+  sendOTPEmail(temp.email, otp, temp.name);
   res.json({ success: true, message: 'OTP resent to your email' });
 };
 
@@ -237,7 +237,7 @@ exports.forgotPassword = async (req, res) => {
 
   console.log(`🔑 [DEBUG] Password Reset OTP for Student ${student.email} is: ${resetOTP}`);
 
-  await sendResetEmail(student.email, resetOTP, student.name);
+  sendResetEmail(student.email, resetOTP, student.name);
   res.json({ success: true, message: 'Password reset code sent to your email.' });
 };
 

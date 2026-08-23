@@ -102,10 +102,10 @@ exports.issueCertificate = async (req, res) => {
   // Notify student
   if (student) {
     await Notification.create({ userId: student._id, role: 'student', title: 'Certificate Issued', message: `Your ${certType} certificate for ${course} has been issued. ID: ${certId}`, link: `/student/certificate/${certId}` });
-    await sendCertIssuedEmail(student.email, student.name, certId, course, req.user.name);
+    sendCertIssuedEmail(student.email, student.name, certId, course, req.user.name);
   } else {
     // Send email invitation to register and claim
-    await sendCertIssuedEmail(sEmail, sName, certId, course, req.user.name);
+    sendCertIssuedEmail(sEmail, sName, certId, course, req.user.name);
   }
 
   await AuditLog.create({ actorRole: 'institution', actorId: req.user._id, actorEmail: req.user.email, action: 'CERT_ISSUED', targetType: 'Certificate', targetId: certId, ip: req.ip });
@@ -171,9 +171,9 @@ exports.bulkIssueCertificates = async (req, res) => {
 
       if (student) {
         await Notification.create({ userId: student._id, role: 'student', title: 'Certificate Issued', message: `Your ${row.certType} certificate for ${row.course} has been issued. ID: ${certId}`, link: `/student/certificate/${certId}` });
-        await sendCertIssuedEmail(student.email, student.name, certId, row.course, req.user.name);
+        sendCertIssuedEmail(student.email, student.name, certId, row.course, req.user.name);
       } else {
-        await sendCertIssuedEmail(sEmail, sName, certId, row.course, req.user.name);
+        sendCertIssuedEmail(sEmail, sName, certId, row.course, req.user.name);
       }
 
       results.certIds.push(certId);
@@ -245,7 +245,7 @@ exports.revokeCertificate = async (req, res) => {
   const student = await Student.findById(cert.student);
   if (student) {
     await Notification.create({ userId: student._id, role: 'student', title: 'Certificate Revoked', message: `Your certificate ${cert.certId} has been revoked. Reason: ${reason}`, link: `/student/certificate/${cert.certId}` });
-    await sendCertRevokedEmail(student.email, student.name, cert.certId, reason);
+    sendCertRevokedEmail(student.email, student.name, cert.certId, reason);
   }
   await AuditLog.create({ actorRole: 'institution', actorId: req.user._id, actorEmail: req.user.email, action: 'CERT_REVOKED', targetType: 'Certificate', targetId: cert.certId, metadata: { reason }, ip: req.ip });
 
@@ -316,7 +316,7 @@ exports.forgotPassword = async (req, res) => {
 
   console.log(`🔑 [DEBUG] Password Reset OTP for Institution ${institution.email} is: ${resetOTP}`);
 
-  await sendResetEmail(institution.email, resetOTP, institution.name);
+  sendResetEmail(institution.email, resetOTP, institution.name);
   res.json({ success: true, message: 'Password reset code sent to your email.' });
 };
 
