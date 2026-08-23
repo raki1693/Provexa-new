@@ -61,8 +61,38 @@ function wrapEmail(title, body) {
 }
 
 async function sendEmail(to, subject, html) {
+  // 1. If RESEND_API_KEY is configured, use Resend HTTP API (runs over HTTPS Port 443, bypassing Render SMTP blocks)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: FROM,
+          to: [to],
+          subject: subject,
+          html: html,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('Resend API Error:', data);
+      } else {
+        console.log('✅ Email sent via Resend API successfully. ID:', data.id);
+      }
+    } catch (err) {
+      console.error('Failed to send email via Resend API:', err.message);
+    }
+    return;
+  }
+
+  // 2. Fallback to standard Nodemailer SMTP (for local development where ports aren't blocked)
   try {
     await transporter.sendMail({ from: FROM, to, subject, html });
+    console.log('✅ Email sent via Nodemailer SMTP successfully.');
   } catch (err) {
     console.error('Email send error:', err.message);
     // Don't throw — email failure shouldn't break the API
