@@ -1,9 +1,9 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
+const transporterConfig = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: 465, // Use SSL port 465 to bypass cloud blocks on port 587
-  secure: true, // true for 465
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -11,7 +11,17 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-});
+};
+
+if (process.env.EMAIL_HOST === 'smtp.gmail.com' || (process.env.EMAIL_USER && process.env.EMAIL_USER.endsWith('@gmail.com'))) {
+  delete transporterConfig.host;
+  delete transporterConfig.port;
+  delete transporterConfig.secure;
+  delete transporterConfig.tls;
+  transporterConfig.service = 'gmail';
+}
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 const FROM = process.env.EMAIL_FROM || 'PROVEXA <noreply@provexa.in>';
 
