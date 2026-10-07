@@ -1,0 +1,29 @@
+﻿[
+  {
+    "studentName": "Rakesh Vepuri",
+    "studentEmail": "rakesh@example.com",
+    "rollNumber": "21CS001",
+    "course": "B.Tech Computer Science",
+    "year": "2024",
+    "cgpa": "8.9",
+    "institutionName": "KITS Guntur"
+  },
+  {
+    "studentName": "Priya Sharma",
+    "studentEmail": "priya@example.com",
+    "rollNumber": "21EC045",
+    "course": "B.Tech Electronics",
+    "year": "2024",
+    "cgpa": "9.1",
+    "institutionName": "KITS Guntur"
+  },
+  {
+    "studentName": "Arun Kumar",
+    "studentEmail": "arun@example.com",
+    "rollNumber": "21ME012",
+    "course": "B.Tech Mechanical",
+    "year": "2024",
+    "cgpa": "7.8",
+    "institutionName": "KITS Guntur"
+  }
+]
