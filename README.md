@@ -1,4 +1,4 @@
-﻿# PROVEXA - Academic Certificate Verification Platform
+# PROVEXA - Academic Certificate Verification Platform
 
 PROVEXA is a tamperproof digital academic certificate verification platform that allows institutions to issue, manage and revoke certificates while enabling employers and students to verify credentials instantly using a unique Certificate ID or QR code.
 
@@ -125,6 +125,13 @@ Atlas      (File Storage)
 
 ---
 
+## Documentation & Testing
+
+- **Technical Design Document**: [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) (Architecture diagrams, data flows, and schemas)
+- **Sample Data & Test Cases**: [sample_data/](sample_data/) (Sample certificate CSV and functional test cases)
+
+---
+
 ## License
 
-MIT License. See LICENSE file for details.
+MIT License. See [LICENSE](LICENSE) file for details.
