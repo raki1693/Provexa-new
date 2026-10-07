@@ -4,7 +4,6 @@ PROVEXA is a tamperproof digital academic certificate verification platform that
 
 ## Live Demo
 
-Frontend: https://provexa.online
 Backend API: https://provexa-api.onrender.com
 
 ---
